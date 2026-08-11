@@ -14,9 +14,9 @@ export async function getMembers(): Promise<Member[]> {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     const rows = await sql`
-      SELECT id, name, role, photo_url as "photoUrl", bio, location
+      SELECT id, name, role, photo_url as "photoUrl", bio, location, COALESCE(tier, 3) as tier
       FROM members
-      ORDER BY id ASC
+      ORDER BY tier ASC, id ASC
     `;
     
     if (!rows || rows.length === 0) {
@@ -38,7 +38,7 @@ export async function getEvents(): Promise<EventItem[]> {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     const eventRows = await sql`
-      SELECT id, slug, title, category, date, location, image_url as "imageUrl", excerpt, content, impact_summary as "impactSummary"
+      SELECT id, slug, title, category, date, location, image_url as "imageUrl", excerpt, content, impact_summary as "impactSummary", timeline_days as "timelineDays"
       FROM events
       ORDER BY date DESC
     `;
@@ -48,15 +48,23 @@ export async function getEvents(): Promise<EventItem[]> {
     }
 
     const eventsWithMembers = await Promise.all(
-      eventRows.map(async (event) => {
+      eventRows.map(async (event: any) => {
         const memberRows = await sql`
           SELECT member_id
           FROM event_members
           WHERE event_id = ${event.id}
         `;
+        let parsedTimeline = [];
+        if (event.timelineDays) {
+          parsedTimeline = typeof event.timelineDays === 'string'
+            ? JSON.parse(event.timelineDays)
+            : event.timelineDays;
+        }
+
         return {
           ...event,
           date: new Date(event.date).toISOString().split('T')[0],
+          timelineDays: parsedTimeline,
           contributingMemberIds: memberRows.map((r: any) => r.member_id)
         };
       })
@@ -87,3 +95,4 @@ export async function saveContactMessage(name: string, email: string, subject: s
     }
   }
 }
+

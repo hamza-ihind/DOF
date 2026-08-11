@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, BookOpen, PackageCheck, Droplets } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export default function Hero() {
   return (
@@ -13,8 +13,8 @@ export default function Hero() {
           
           {/* Headlines & CTA */}
           <div className="lg:col-span-7 space-y-4 text-center lg:text-left">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
-              Defenders of <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-[#aa1c34]">Future</span>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-white">
+              Defenders of Future
             </h1>
 
             <p className="text-base sm:text-lg text-slate-200 font-normal leading-relaxed max-w-2xl mx-auto lg:mx-0">
@@ -37,44 +37,20 @@ export default function Hero() {
                 <span>Meet Members</span>
               </Link>
             </div>
-
-            {/* Quick 3 Pillars Bar */}
-            <div className="pt-4 border-t border-white/10 grid grid-cols-3 gap-3 text-left">
-              <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-[#dfa234] mb-0.5">
-                  <BookOpen className="w-3.5 h-3.5 text-[#aa1c34]" />
-                  <span>Schools</span>
-                </div>
-                <div className="text-[11px] text-slate-300">Sanding, paint & supplies</div>
-              </div>
-              <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-[#dfa234] mb-0.5">
-                  <PackageCheck className="w-3.5 h-3.5 text-[#aa1c34]" />
-                  <span>Food Package</span>
-                </div>
-                <div className="text-[11px] text-slate-300">Flour, staples & soap</div>
-              </div>
-              <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-[#dfa234] mb-0.5">
-                  <Droplets className="w-3.5 h-3.5 text-[#aa1c34]" />
-                  <span>Spring of Life</span>
-                </div>
-                <div className="text-[11px] text-slate-300">Deep water well drilling</div>
-              </div>
-            </div>
           </div>
 
-          {/* Visual Showcase */}
+          {/* Visual Showcase / Placeholder Picture */}
           <div className="lg:col-span-5">
             <div className="relative rounded-2xl overflow-hidden shadow-xl border-2 border-white/10">
               <div className="relative aspect-[16/10] w-full bg-slate-800">
                 <Image
-                  src="/images/school_renovation.jpg"
-                  alt="Defenders of Future Volunteers"
+                  src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=1200&q=80"
+                  alt="Defenders of Future Placeholder Picture"
                   fill
                   className="object-cover"
                   priority
                 />
+                <div className="absolute inset-0 bg-black/20" />
               </div>
             </div>
           </div>
@@ -84,3 +60,4 @@ export default function Hero() {
     </section>
   );
 }
+

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, Menu, X, Heart, MapPin, Phone } from 'lucide-react';
+import { Shield, Menu, X, Heart } from 'lucide-react';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -28,32 +28,13 @@ export default function Header() {
   ];
 
   return (
-    <>
-      {/* Compact Top Bar */}
-      <div className="bg-[#0a4f6c] text-white text-[11px] py-1.5 border-b border-[#aa1c34]/20">
-        <div className="wide-container flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 text-slate-200">
-              <MapPin className="w-3 h-3 text-[#dfa234]" />
-              Biougra, Morocco
-            </span>
-          </div>
-          <div className="flex items-center gap-3 text-slate-200">
-            <a href="tel:+212600000000" className="hover:text-white flex items-center gap-1">
-              <Phone className="w-3 h-3 text-[#dfa234]" /> +212 600-000000
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Header */}
-      <header
-        className={`sticky top-0 z-50 transition-all duration-200 ${
-          isScrolled
-            ? 'bg-white/95 backdrop-blur-md shadow-sm py-2.5 border-b border-slate-200'
-            : 'bg-white py-3 border-b border-slate-100'
-        }`}
-      >
+    <header
+      className={`sticky top-0 z-50 transition-all duration-200 ${
+        isScrolled
+          ? 'bg-white/95 backdrop-blur-md shadow-sm py-2.5 border-b border-slate-200'
+          : 'bg-white py-3 border-b border-slate-100'
+      }`}
+    >
         <div className="wide-container flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
@@ -123,6 +104,5 @@ export default function Header() {
           </div>
         )}
       </header>
-    </>
   );
 }

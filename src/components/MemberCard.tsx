@@ -1,6 +1,5 @@
 import React from 'react';
 import Image from 'next/image';
-import { MapPin, Shield } from 'lucide-react';
 import { Member } from '@/lib/seedData';
 
 interface MemberCardProps {
@@ -39,16 +38,11 @@ export default function MemberCard({ member }: MemberCardProps) {
         </div>
 
         {/* Bio */}
-        <p className="text-xs text-slate-600 leading-relaxed mb-3 line-clamp-2">
+        <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
           {member.bio}
         </p>
-      </div>
-
-      {/* Footer Location */}
-      <div className="w-full pt-2 border-t border-slate-100 flex items-center justify-center gap-1 text-[11px] text-slate-500 font-semibold">
-        <MapPin className="w-3 h-3 text-[#0a4f6c]" />
-        <span>{member.location || 'Biougra, Morocco'}</span>
       </div>
     </div>
   );
 }
+

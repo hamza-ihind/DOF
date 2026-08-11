@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Calendar, MapPin, ArrowRight, Users, Sparkles } from 'lucide-react';
+import { Calendar, MapPin, ArrowRight, Users } from 'lucide-react';
 import { EventItem, Member } from '@/lib/seedData';
 
 interface EventCardProps {
@@ -26,27 +26,20 @@ export default function EventCard({ eventItem, allMembers }: EventCardProps) {
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          
-          {/* Category Tag */}
-          <div className="absolute top-4 left-4">
-            <span className="px-3 py-1 bg-[#0a4f6c] text-white rounded-full text-xs font-bold shadow-md">
-              {eventItem.category}
-            </span>
-          </div>
-
-          {/* Date Badge */}
-          <div className="absolute bottom-3 left-4 flex items-center gap-1.5 text-xs text-white bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
-            <Calendar className="w-3.5 h-3.5 text-[#dfa234]" />
-            <span>{eventItem.date}</span>
-          </div>
         </div>
 
         {/* Card Body */}
         <div className="p-6 space-y-3">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#aa1c34]">
-            <MapPin className="w-3.5 h-3.5" />
-            <span>{eventItem.location}</span>
+          {/* Location & Date Row */}
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5 font-semibold text-[#aa1c34]">
+              <MapPin className="w-3.5 h-3.5" />
+              <span>{eventItem.location}</span>
+            </div>
+            <div className="flex items-center gap-1.5 font-semibold text-slate-500">
+              <Calendar className="w-3.5 h-3.5 text-[#0a4f6c]" />
+              <span>{eventItem.date}</span>
+            </div>
           </div>
 
           <h3 className="text-xl font-bold text-[#0a4f6c] group-hover:text-[#aa1c34] transition-colors leading-snug">
@@ -58,16 +51,6 @@ export default function EventCard({ eventItem, allMembers }: EventCardProps) {
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
             {eventItem.excerpt}
           </p>
-
-          {/* Impact Summary Pill */}
-          {eventItem.impactSummary && (
-            <div className="pt-1">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-[#0a4f6c] text-xs font-extrabold rounded-lg border border-amber-200">
-                <Sparkles className="w-3.5 h-3.5 text-[#dfa234]" />
-                {eventItem.impactSummary}
-              </span>
-            </div>
-          )}
         </div>
       </div>
 
@@ -114,3 +97,4 @@ export default function EventCard({ eventItem, allMembers }: EventCardProps) {
     </article>
   );
 }
+

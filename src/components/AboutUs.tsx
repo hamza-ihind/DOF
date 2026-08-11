@@ -7,12 +7,15 @@ export default function AboutUs() {
       <div className="wide-container relative z-10">
         
         {/* Header Section */}
-        <div className="text-center max-w-3xl mx-auto mb-10 space-y-2">
+        <div className="text-center max-w-3xl mx-auto mb-10 space-y-3">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0a4f6c]">
             Who We Are & What We Do
           </h2>
           <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-            <strong className="text-[#0a4f6c]">Defenders of Future</strong> is a non-profit association based in Biougra, Morocco, refurbishing schools in forgotten villages, distributing food & essential packages, and drilling clean water wells.
+            <strong className="text-[#0a4f6c]">Defenders of Future</strong> is a dedicated humanitarian association based in Biougra, Morocco. Operating across the rural and mountainous villages of the Chtouka Aït Baha region, our mission is built on direct, grassroots action.
+          </p>
+          <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
+            We partner directly with local communities to restore deteriorating primary schools, provide customized food and essential care packages tailored to individual family censuses, and drill deep water wells under our flagship <strong className="text-[#0a4f6c] font-semibold">&ldquo;Spring of Life&rdquo;</strong> initiative. Through transparency, local leadership, and volunteer dedication, we aim to build lasting hope and self-reliance for future generations.
           </p>
         </div>
 
