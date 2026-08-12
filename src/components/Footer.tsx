@@ -49,6 +49,11 @@ export default function Footer() {
               <li>
                 <Link href="/contact" className="hover:text-[#dfa234] transition-colors">Contact</Link>
               </li>
+              <li>
+                <Link href="/admin" className="hover:text-[#dfa234] text-slate-400 font-semibold transition-colors flex items-center gap-1">
+                  <span>🔒 Admin Area</span>
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -75,8 +80,11 @@ export default function Footer() {
         </div>
 
         {/* Bottom Copyright bar - Copyright of E11even */}
-        <div className="pt-4 border-t border-white/10 flex items-center justify-center text-xs text-slate-300">
+        <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-300">
           <p>© {new Date().getFullYear()} Defenders of Future. Made by <strong className="text-white font-bold">E11even</strong>.</p>
+          <Link href="/admin" className="text-[11px] text-slate-400 hover:text-white transition-colors">
+            Admin Panel
+          </Link>
         </div>
       </div>
     </footer>

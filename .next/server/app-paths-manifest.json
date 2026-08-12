@@ -1,6 +1,10 @@
 {
+  "/api/admin/check/route": "app/api/admin/check/route.js",
   "/page": "app/page.js",
-  "/events/[slug]/page": "app/events/[slug]/page.js",
-  "/members/page": "app/members/page.js",
-  "/events/page": "app/events/page.js"
+  "/admin/page": "app/admin/page.js",
+  "/admin/events/[id]/edit/page": "app/admin/events/[id]/edit/page.js",
+  "/admin/events/new/page": "app/admin/events/new/page.js",
+  "/api/members/route": "app/api/members/route.js",
+  "/api/events/route": "app/api/events/route.js",
+  "/api/uploadthing/route": "app/api/uploadthing/route.js"
 }
