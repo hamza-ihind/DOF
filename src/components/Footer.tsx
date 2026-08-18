@@ -1,10 +1,15 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import { Shield, MapPin, Phone, Mail } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function Footer() {
+  const { t } = useLanguage();
+
   return (
-    <footer className="bg-[#0a4f6c] text-white pt-10 pb-6 border-t-4 border-[#aa1c34] relative overflow-hidden text-sm">
+    <footer className="bg-[#0a4f6c] dark:bg-slate-950 text-white pt-10 pb-6 border-t-4 border-[#aa1c34] relative overflow-hidden text-sm transition-colors duration-300">
       <div className="absolute inset-0 moroccan-pattern opacity-10 pointer-events-none" />
 
       <div className="wide-container relative z-10">
@@ -20,39 +25,33 @@ export default function Footer() {
                 <h3 className="text-lg font-bold tracking-tight text-white leading-none">
                   Defenders <span className="text-[#dfa234]">of Future</span>
                 </h3>
-                <p className="text-[11px] text-slate-300">Biougra, Morocco</p>
               </div>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Refurbishing schools, distributing tailored food & soap packages, and drilling clean water wells under the &ldquo;Spring of Life&rdquo; banner for villages in Biougra.
+              {t('footer.bio')}
             </p>
           </div>
 
           {/* Col 2: Quick Navigation */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-white/10 pb-1.5">
-              Navigation
+              {t('footer.navigation')}
             </h4>
             <ul className="space-y-1.5 text-xs text-slate-300">
               <li>
-                <Link href="/" className="hover:text-[#dfa234] transition-colors">Home</Link>
+                <Link href="/" className="hover:text-[#dfa234] transition-colors">{t('nav.home')}</Link>
               </li>
               <li>
-                <Link href="/#about" className="hover:text-[#dfa234] transition-colors">About Association</Link>
+                <Link href="/#about" className="hover:text-[#dfa234] transition-colors">{t('nav.about')}</Link>
               </li>
               <li>
-                <Link href="/members" className="hover:text-[#dfa234] transition-colors">Association Members</Link>
+                <Link href="/members" className="hover:text-[#dfa234] transition-colors">{t('nav.members')}</Link>
               </li>
               <li>
-                <Link href="/events" className="hover:text-[#dfa234] transition-colors">Events & Blog</Link>
+                <Link href="/events" className="hover:text-[#dfa234] transition-colors">{t('nav.events')}</Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-[#dfa234] transition-colors">Contact</Link>
-              </li>
-              <li>
-                <Link href="/admin" className="hover:text-[#dfa234] text-slate-400 font-semibold transition-colors flex items-center gap-1">
-                  <span>🔒 Admin Area</span>
-                </Link>
+                <Link href="/contact" className="hover:text-[#dfa234] transition-colors">{t('nav.contact')}</Link>
               </li>
             </ul>
           </div>
@@ -60,7 +59,7 @@ export default function Footer() {
           {/* Col 3: Contact & Headquarters */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-white/10 pb-1.5">
-              Biougra Headquarters
+              {t('footer.hq')}
             </h4>
             <ul className="space-y-1.5 text-xs text-slate-300">
               <li className="flex items-center gap-2">
@@ -80,14 +79,10 @@ export default function Footer() {
         </div>
 
         {/* Bottom Copyright bar - Copyright of E11even */}
-        <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-300">
-          <p>© {new Date().getFullYear()} Defenders of Future. Made by <strong className="text-white font-bold">E11even</strong>.</p>
-          <Link href="/admin" className="text-[11px] text-slate-400 hover:text-white transition-colors">
-            Admin Panel
-          </Link>
+        <div className="pt-4 border-t border-white/10 text-center text-xs text-slate-300">
+          <p>© {new Date().getFullYear()} Defenders of Future. {t('footer.copyright')} <strong className="text-white font-bold">E11even</strong>.</p>
         </div>
       </div>
     </footer>
   );
 }
-

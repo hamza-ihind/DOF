@@ -11,11 +11,21 @@
   --dof-bg: #f8fafc;
 }
 
+.dark {
+  --dof-bg: #0f172a;
+}
+
 body {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #1e293b;
   background-color: var(--dof-bg);
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark body {
+  color: #f1f5f9;
+  background-color: #0f172a;
 }
 
 /* Custom Scrollbar */
@@ -24,6 +34,9 @@ body {
 }
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
 }
 ::-webkit-scrollbar-thumb {
   background: #0a4f6c;
@@ -37,6 +50,9 @@ body {
 .moroccan-pattern {
   background-image: radial-gradient(rgba(10, 79, 108, 0.07) 1px, transparent 1px);
   background-size: 20px 20px;
+}
+.dark .moroccan-pattern {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
 }
 
 /* Utility for wide horizontal containers */
