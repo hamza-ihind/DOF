@@ -53,7 +53,6 @@ export default function Header() {
     { name: 'Members', href: '/members' },
     { name: 'Events', href: '/events' },
     { name: 'Contact', href: '/contact' },
-    { name: 'Admin', href: '/admin' },
   ];
 
   return (
@@ -84,33 +83,27 @@ export default function Header() {
         <nav className="hidden lg:flex items-center gap-7">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
-            const isAdmin = link.name === 'Admin';
             return (
               <Link
                 key={link.name}
                 href={link.href}
-                className={`text-sm font-semibold transition-colors py-1 flex items-center gap-1 ${
-                  isActive
-                    ? 'text-[#aa1c34]'
-                    : isAdmin
-                    ? 'text-[#0a4f6c] hover:text-[#aa1c34] bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200'
-                    : 'text-slate-700 hover:text-[#aa1c34]'
+                className={`text-sm font-semibold transition-colors py-1 ${
+                  isActive ? 'text-[#aa1c34]' : 'text-slate-700 hover:text-[#aa1c34]'
                 }`}
               >
-                {isAdmin && <Lock className="w-3 h-3 text-[#0a4f6c]" />}
                 {link.name}
               </Link>
             );
           })}
         </nav>
 
-        {/* Action CTA & Admin Logout */}
+        {/* Conditional Action Area: Admin Login OR Admin Panel + Logout */}
         <div className="flex items-center gap-2.5">
           {isAdminLoggedIn ? (
             <div className="flex items-center gap-2">
               <Link
                 href="/admin"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0a4f6c] text-white text-xs font-bold shadow hover:bg-[#083c53] transition-all"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0a4f6c] text-white text-xs font-bold shadow hover:bg-[#083c53] transition-all"
               >
                 <Lock className="w-3.5 h-3.5" />
                 Admin Panel
@@ -118,7 +111,7 @@ export default function Header() {
 
               <button
                 onClick={handleAdminLogout}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-[#aa1c34] text-xs font-bold border border-red-200 transition-all"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-[#aa1c34] text-xs font-bold border border-red-200 transition-all"
                 title="Logout Admin Session"
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -128,7 +121,7 @@ export default function Header() {
           ) : (
             <Link
               href="/admin"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#0a4f6c] text-xs font-bold border border-slate-200 transition-all"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#0a4f6c] text-xs font-bold border border-slate-200 transition-all"
             >
               <Lock className="w-3.5 h-3.5" />
               Admin
@@ -165,17 +158,36 @@ export default function Header() {
               {link.name}
             </Link>
           ))}
-          {isAdminLoggedIn && (
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                handleAdminLogout();
-              }}
-              className="w-full text-left py-1.5 text-sm font-bold text-[#aa1c34] flex items-center gap-1.5"
+          {isAdminLoggedIn ? (
+            <>
+              <Link
+                href="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block py-1.5 text-sm font-bold text-[#0a4f6c] flex items-center gap-1.5"
+              >
+                <Lock className="w-4 h-4" />
+                Admin Panel
+              </Link>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleAdminLogout();
+                }}
+                className="w-full text-left py-1.5 text-sm font-bold text-[#aa1c34] flex items-center gap-1.5"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout Admin
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/admin"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-1.5 text-sm font-semibold text-[#0a4f6c] flex items-center gap-1.5"
             >
-              <LogOut className="w-4 h-4" />
-              Logout Admin
-            </button>
+              <Lock className="w-4 h-4" />
+              Admin Login
+            </Link>
           )}
         </div>
       )}

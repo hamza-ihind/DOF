@@ -424,7 +424,7 @@ export default function NewEventPage() {
                     onClick={() => toggleMemberSelection(member.id)}
                     className={`flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition-all ${
                       isSelected
-                        ? 'bg-blue-50/80 border-[#0a4f6c] ring-2 ring-[#0a4f6c]/20'
+                        ? 'bg-slate-100 border-[#0a4f6c] ring-1 ring-[#0a4f6c]'
                         : 'bg-slate-50 border-slate-200 hover:border-slate-300'
                     }`}
                   >

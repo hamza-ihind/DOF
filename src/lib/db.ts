@@ -1,13 +1,19 @@
 import { neon } from '@neondatabase/serverless';
 import { INITIAL_MEMBERS, INITIAL_EVENTS, Member, EventItem } from './seedData';
 
-// Fallback in-memory state when Neon DB is not active
+// Fallback in-memory state ONLY when no database is configured
 let fallbackMembers: Member[] = [...INITIAL_MEMBERS];
 let fallbackEvents: EventItem[] = [...INITIAL_EVENTS];
 
 const isNeonConfigured = () => {
   const url = process.env.DATABASE_URL;
-  return Boolean(url && !url.includes('placeholder') && url.startsWith('postgres'));
+  return Boolean(
+    url &&
+    !url.includes('placeholder') &&
+    !url.includes('user:password') &&
+    !url.includes('ep-example-123456') &&
+    url.startsWith('postgres')
+  );
 };
 
 export async function getMembers(): Promise<Member[]> {
@@ -23,14 +29,10 @@ export async function getMembers(): Promise<Member[]> {
       ORDER BY tier ASC, id ASC
     `;
     
-    if (!rows || rows.length === 0) {
-      return fallbackMembers;
-    }
-    
-    return rows as Member[];
+    return (rows || []) as Member[];
   } catch (error) {
-    console.warn('Neon DB query failed, falling back to mock seed data:', error);
-    return fallbackMembers;
+    console.error('Neon DB getMembers failed:', error);
+    return [];
   }
 }
 
@@ -51,11 +53,8 @@ export async function addMember(member: Omit<Member, 'id'>): Promise<Member> {
     `;
     return rows[0] as Member;
   } catch (error) {
-    console.error('Failed to add member to Neon DB, adding to fallback state:', error);
-    const newId = fallbackMembers.length > 0 ? Math.max(...fallbackMembers.map(m => m.id)) + 1 : 1;
-    const newMember: Member = { ...member, id: newId };
-    fallbackMembers.push(newMember);
-    return newMember;
+    console.error('Failed to add member to Neon DB:', error);
+    throw error;
   }
 }
 
@@ -94,11 +93,8 @@ export async function updateMember(id: number, memberData: Partial<Omit<Member, 
     `;
     return rows[0] as Member;
   } catch (error) {
-    console.error('Failed to update member in Neon DB, updating fallback state:', error);
-    const index = fallbackMembers.findIndex(m => m.id === id);
-    if (index === -1) return null;
-    fallbackMembers[index] = { ...fallbackMembers[index], ...memberData };
-    return fallbackMembers[index];
+    console.error('Failed to update member in Neon DB:', error);
+    throw error;
   }
 }
 
@@ -112,13 +108,10 @@ export async function deleteMember(id: number): Promise<boolean> {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     await sql`DELETE FROM members WHERE id = ${id}`;
-    fallbackMembers = fallbackMembers.filter(m => m.id !== id);
     return true;
   } catch (error) {
     console.error('Failed to delete member from Neon DB:', error);
-    const initialLen = fallbackMembers.length;
-    fallbackMembers = fallbackMembers.filter(m => m.id !== id);
-    return fallbackMembers.length < initialLen;
+    throw error;
   }
 }
 
@@ -136,7 +129,7 @@ export async function getEvents(): Promise<EventItem[]> {
     `;
 
     if (!eventRows || eventRows.length === 0) {
-      return fallbackEvents;
+      return [];
     }
 
     const eventsWithMembers = await Promise.all(
@@ -164,8 +157,8 @@ export async function getEvents(): Promise<EventItem[]> {
 
     return eventsWithMembers as EventItem[];
   } catch (error) {
-    console.warn('Neon DB event query failed, falling back to mock seed data:', error);
-    return fallbackEvents;
+    console.error('Neon DB getEvents failed:', error);
+    return [];
   }
 }
 
@@ -219,11 +212,8 @@ export async function addEvent(event: Omit<EventItem, 'id'>): Promise<EventItem>
     };
     return result;
   } catch (error) {
-    console.error('Failed to add event to Neon DB, fallback:', error);
-    const newId = fallbackEvents.length > 0 ? Math.max(...fallbackEvents.map(e => e.id)) + 1 : 1;
-    const newEvent: EventItem = { ...event, id: newId };
-    fallbackEvents.unshift(newEvent);
-    return newEvent;
+    console.error('Failed to add event to Neon DB:', error);
+    throw error;
   }
 }
 
@@ -292,11 +282,8 @@ export async function updateEvent(id: number, eventData: Partial<Omit<EventItem,
       contributingMemberIds: eventData.contributingMemberIds || []
     };
   } catch (error) {
-    console.error('Failed to update event in Neon DB, fallback:', error);
-    const index = fallbackEvents.findIndex(e => e.id === id);
-    if (index === -1) return null;
-    fallbackEvents[index] = { ...fallbackEvents[index], ...eventData };
-    return fallbackEvents[index];
+    console.error('Failed to update event in Neon DB:', error);
+    throw error;
   }
 }
 
@@ -310,13 +297,10 @@ export async function deleteEvent(id: number): Promise<boolean> {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     await sql`DELETE FROM events WHERE id = ${id}`;
-    fallbackEvents = fallbackEvents.filter(e => e.id !== id);
     return true;
   } catch (error) {
     console.error('Failed to delete event from Neon DB:', error);
-    const initialLen = fallbackEvents.length;
-    fallbackEvents = fallbackEvents.filter(e => e.id !== id);
-    return fallbackEvents.length < initialLen;
+    throw error;
   }
 }
 
@@ -338,5 +322,3 @@ export async function saveContactMessage(name: string, email: string, subject: s
     }
   }
 }
-
-
