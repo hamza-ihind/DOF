@@ -76,6 +76,13 @@ export default function EditEventPage() {
   const fetchInitialData = async () => {
     setFetching(true);
     try {
+      const authRes = await fetch('/api/admin/check');
+      const authData = await authRes.json();
+      if (!authData.authenticated) {
+        router.push('/admin');
+        return;
+      }
+
       const [membersRes, eventsRes] = await Promise.all([
         fetch('/api/members'),
         fetch('/api/events')

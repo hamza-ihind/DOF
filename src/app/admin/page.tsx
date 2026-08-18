@@ -154,6 +154,19 @@ export default function AdminPage() {
     }
   };
 
+  // Logout Handler
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+      setIsAuthenticated(false);
+      setUsername('');
+      setPassword('');
+      showToast('Logged out successfully');
+    } catch {
+      showToast('Logout failed', 'error');
+    }
+  };
+
   // --- Member Handlers ---
   const openAddMemberModal = () => {
     setEditingMember(null);
@@ -407,22 +420,22 @@ export default function AdminPage() {
             <p className="text-xs text-slate-500 font-semibold">Manage association members, events, timeline days, and photo carousels.</p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setActiveTab('members')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'members'
                   ? 'bg-[#0a4f6c] text-white shadow-md'
                   : 'bg-white text-slate-600 hover:text-[#0a4f6c] border border-slate-200 hover:bg-slate-100'
               }`}
             >
               <Users className="w-4 h-4" />
-              Members Table ({members.length})
+              Members ({members.length})
             </button>
 
             <button
               onClick={() => setActiveTab('events')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'events'
                   ? 'bg-[#aa1c34] text-white shadow-md'
                   : 'bg-white text-slate-600 hover:text-[#aa1c34] border border-slate-200 hover:bg-slate-100'
@@ -430,6 +443,23 @@ export default function AdminPage() {
             >
               <Calendar className="w-4 h-4" />
               Events ({events.length})
+            </button>
+
+            <Link
+              href="/"
+              target="_blank"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Live Site</span>
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border border-red-200 transition-all shadow-sm"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Log Out</span>
             </button>
           </div>
         </div>

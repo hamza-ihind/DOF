@@ -74,9 +74,26 @@ export default function NewEventPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  const [authChecking, setAuthChecking] = useState(true);
+
   useEffect(() => {
-    fetchMembers();
+    checkAuthAndFetch();
   }, []);
+
+  const checkAuthAndFetch = async () => {
+    try {
+      const authRes = await fetch('/api/admin/check');
+      const authData = await authRes.json();
+      if (!authData.authenticated) {
+        router.push('/admin');
+        return;
+      }
+      setAuthChecking(false);
+      fetchMembers();
+    } catch {
+      router.push('/admin');
+    }
+  };
 
   const fetchMembers = async () => {
     try {
@@ -196,6 +213,17 @@ export default function NewEventPage() {
       setLoading(false);
     }
   };
+
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-800 font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-[#0a4f6c] border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-600 text-xs font-semibold">Verifying Admin Session...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 py-8 font-sans">
