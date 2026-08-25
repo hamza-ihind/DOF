@@ -2,12 +2,14 @@ import { neon } from '@neondatabase/serverless';
 import fs from 'fs';
 import path from 'path';
 
-// Parse .env.local manually if process.env.DATABASE_URL is not set
+// Parse .env or .env.local manually if process.env.DATABASE_URL is not set
 if (!process.env.DATABASE_URL) {
   try {
-    const envPath = path.resolve(process.cwd(), '.env.local');
-    if (fs.existsSync(envPath)) {
-      const envContent = fs.readFileSync(envPath, 'utf8');
+    const envPath = path.resolve(process.cwd(), '.env');
+    const envLocalPath = path.resolve(process.cwd(), '.env.local');
+    const targetPath = fs.existsSync(envPath) ? envPath : envLocalPath;
+    if (fs.existsSync(targetPath)) {
+      const envContent = fs.readFileSync(targetPath, 'utf8');
       envContent.split('\n').forEach(line => {
         const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
         if (match) {
@@ -20,7 +22,7 @@ if (!process.env.DATABASE_URL) {
       });
     }
   } catch (e) {
-    console.warn('Failed to parse .env.local file:', e);
+    console.warn('Failed to parse .env file:', e);
   }
 }
 
@@ -84,6 +86,19 @@ export async function initDatabase() {
       email VARCHAR(255) NOT NULL,
       subject VARCHAR(255),
       message TEXT NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // 5. Transactions / Charity Donations Table
+  await sql`
+    CREATE TABLE IF NOT EXISTS transactions (
+      id SERIAL PRIMARY KEY,
+      member_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
+      member_name VARCHAR(255) NOT NULL,
+      amount NUMERIC(10, 2) NOT NULL,
+      date DATE NOT NULL,
+      notes TEXT,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )
   `;

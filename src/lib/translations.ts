@@ -65,11 +65,15 @@ export const translations = {
     'events.supportBtn': 'Support Next Mission',
 
     // Members / Team Page
-    'members.title': 'Organizational Tree',
-    'members.subtitle': 'Defenders of Future team structure in Biougra, Morocco.',
-    'members.viewFullTree': 'View Full Organizational Tree',
-    'members.homeTitle': 'Meet Our Team Members',
-    'members.homeSubtitle': 'The compassionate Moroccan leaders and volunteers driving change in villages near Biougra.',
+    'members.title': 'Executive Bureau',
+    'members.subtitle': 'Executive Bureau and team members of Defenders of Future in Biougra, Morocco.',
+    'members.viewFullTree': 'View Full Executive Bureau',
+    'members.homeTitle': 'Meet Our Executive Bureau',
+    'members.homeSubtitle': 'The compassionate leaders and volunteers driving change in villages near Biougra.',
+    'members.pageTitle': 'Executive Bureau',
+    'members.pageSubtitle': 'The dedicated team members and volunteers driving change in our local communities.',
+    'members.noMembers': 'No members registered yet.',
+    'members.noMembersDesc': 'Add association members in the Admin panel to display them here.',
 
     // Contact Form
     'contact.title': 'Get In Touch With Our Team',
@@ -173,11 +177,15 @@ export const translations = {
     'events.supportBtn': 'Soutenir la prochaine mission',
 
     // Members / Team Page
-    'members.title': 'Arbre Organisationnel',
-    'members.subtitle': 'Structure de l\'équipe Defenders of Future à Biougra, Maroc.',
-    'members.viewFullTree': 'Voir l\'organigramme complet',
-    'members.homeTitle': 'Rencontrez nos membres',
-    'members.homeSubtitle': 'Les dirigeants et bénévoles marocains dévoués qui agissent dans les villages de Biougra.',
+    'members.title': 'Bureau Exécutif',
+    'members.subtitle': 'Bureau exécutif et membres de l\'équipe Defenders of Future à Biougra, Maroc.',
+    'members.viewFullTree': 'Voir le bureau exécutif complet',
+    'members.homeTitle': 'Rencontrez notre bureau exécutif',
+    'members.homeSubtitle': 'Les dirigeants et bénévoles dévoués qui agissent dans les villages de Biougra.',
+    'members.pageTitle': 'Bureau Exécutif',
+    'members.pageSubtitle': 'Les membres dévoués et bénévoles qui agissent pour transformer nos communautés locales.',
+    'members.noMembers': 'Aucun membre enregistré pour le moment.',
+    'members.noMembersDesc': 'Ajoutez des membres de l\'association dans le panneau Admin pour les afficher ici.',
 
     // Contact Form
     'contact.title': 'Contactez notre équipe',

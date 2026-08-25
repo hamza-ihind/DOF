@@ -37,10 +37,13 @@ export async function POST(request: Request) {
     const member = await addMember({
       name: body.name,
       role: body.role,
+      roleEn: body.roleEn || body.role,
+      roleFr: body.roleFr || body.role,
       photoUrl: body.photoUrl || '/images/member_1.jpg',
       bio: body.bio || '',
-      location: body.location || 'Biougra, Morocco',
-      tier: Number(body.tier) as 1 | 2 | 3 || 3
+      bioEn: body.bioEn || body.bio || '',
+      bioFr: body.bioFr || body.bio || '',
+      location: body.location || 'Biougra, Morocco'
     });
 
     return NextResponse.json({ success: true, member });

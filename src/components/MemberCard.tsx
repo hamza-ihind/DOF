@@ -1,12 +1,20 @@
+'use client';
+
 import React from 'react';
 import Image from 'next/image';
 import { Member } from '@/lib/seedData';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface MemberCardProps {
   member: Member;
 }
 
 export default function MemberCard({ member }: MemberCardProps) {
+  const { language } = useLanguage();
+
+  const role = (language === 'fr' ? (member.roleFr || member.role) : (member.roleEn || member.role)) || member.role;
+  const bio = (language === 'fr' ? (member.bioFr || member.bio) : (member.bioEn || member.bio)) || member.bio;
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 text-center border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col items-center justify-between relative overflow-hidden group">
       {/* Top Accent Line */}
@@ -34,12 +42,12 @@ export default function MemberCard({ member }: MemberCardProps) {
 
         {/* Role Badge */}
         <div className="inline-block px-2.5 py-0.5 bg-[#aa1c34]/10 dark:bg-red-950/50 text-[#aa1c34] dark:text-red-300 rounded-full text-xs font-bold mb-2">
-          {member.role}
+          {role}
         </div>
 
-        {/* Bio */}
+        {/* Bio / Quote */}
         <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2">
-          {member.bio}
+          {bio}
         </p>
       </div>
     </div>

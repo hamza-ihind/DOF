@@ -1,9 +1,10 @@
 import { neon } from '@neondatabase/serverless';
-import { INITIAL_MEMBERS, INITIAL_EVENTS, Member, EventItem } from './seedData';
+import { INITIAL_MEMBERS, INITIAL_EVENTS, INITIAL_TRANSACTIONS, Member, EventItem, Transaction } from './seedData';
 
 // Fallback in-memory state ONLY when no database is configured
 let fallbackMembers: Member[] = [...INITIAL_MEMBERS];
 let fallbackEvents: EventItem[] = [...INITIAL_EVENTS];
+let fallbackTransactions: Transaction[] = [...INITIAL_TRANSACTIONS];
 
 const isNeonConfigured = () => {
   const url = process.env.DATABASE_URL;
@@ -24,15 +25,19 @@ export async function getMembers(): Promise<Member[]> {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     const rows = await sql`
-      SELECT id, name, role, photo_url as "photoUrl", bio, location, COALESCE(tier, 3) as tier
+      SELECT id, name, role, photo_url as "photoUrl", bio, location,
+             COALESCE(role_en, role) as "roleEn",
+             COALESCE(role_fr, role) as "roleFr",
+             COALESCE(bio_en, bio) as "bioEn",
+             COALESCE(bio_fr, bio) as "bioFr"
       FROM members
-      ORDER BY tier ASC, id ASC
+      ORDER BY id ASC
     `;
     
     return (rows || []) as Member[];
   } catch (error) {
     console.error('Neon DB getMembers failed:', error);
-    return [];
+    return fallbackMembers;
   }
 }
 
@@ -47,9 +52,9 @@ export async function addMember(member: Omit<Member, 'id'>): Promise<Member> {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     const rows = await sql`
-      INSERT INTO members (name, role, photo_url, bio, location, tier)
-      VALUES (${member.name}, ${member.role}, ${member.photoUrl}, ${member.bio || ''}, ${member.location || 'Biougra, Morocco'}, ${member.tier || 3})
-      RETURNING id, name, role, photo_url as "photoUrl", bio, location, tier
+      INSERT INTO members (name, role, role_en, role_fr, photo_url, bio, bio_en, bio_fr, location)
+      VALUES (${member.name}, ${member.role}, ${member.roleEn || member.role}, ${member.roleFr || member.role}, ${member.photoUrl}, ${member.bio || ''}, ${member.bioEn || member.bio || ''}, ${member.bioFr || member.bio || ''}, ${member.location || 'Biougra, Morocco'})
+      RETURNING id, name, role, role_en as "roleEn", role_fr as "roleFr", photo_url as "photoUrl", bio, bio_en as "bioEn", bio_fr as "bioFr", location
     `;
     return rows[0] as Member;
   } catch (error) {
@@ -74,22 +79,28 @@ export async function updateMember(id: number, memberData: Partial<Omit<Member, 
     const updated = {
       name: memberData.name ?? current.name,
       role: memberData.role ?? current.role,
+      roleEn: memberData.roleEn ?? current.role_en ?? current.role,
+      roleFr: memberData.roleFr ?? current.role_fr ?? current.role,
       photoUrl: memberData.photoUrl ?? current.photo_url,
       bio: memberData.bio ?? current.bio,
-      location: memberData.location ?? current.location,
-      tier: memberData.tier ?? current.tier ?? 3
+      bioEn: memberData.bioEn ?? current.bio_en ?? current.bio,
+      bioFr: memberData.bioFr ?? current.bio_fr ?? current.bio,
+      location: memberData.location ?? current.location
     };
 
     const rows = await sql`
       UPDATE members
       SET name = ${updated.name},
           role = ${updated.role},
+          role_en = ${updated.roleEn},
+          role_fr = ${updated.roleFr},
           photo_url = ${updated.photoUrl},
           bio = ${updated.bio},
-          location = ${updated.location},
-          tier = ${updated.tier}
+          bio_en = ${updated.bioEn},
+          bio_fr = ${updated.bioFr},
+          location = ${updated.location}
       WHERE id = ${id}
-      RETURNING id, name, role, photo_url as "photoUrl", bio, location, tier
+      RETURNING id, name, role, role_en as "roleEn", role_fr as "roleFr", photo_url as "photoUrl", bio, bio_en as "bioEn", bio_fr as "bioFr", location
     `;
     return rows[0] as Member;
   } catch (error) {
@@ -320,5 +331,136 @@ export async function saveContactMessage(name: string, email: string, subject: s
     } catch (err) {
       console.error('Failed to insert contact message into Neon DB:', err);
     }
+  }
+}
+
+export async function getTransactions(): Promise<Transaction[]> {
+  if (!isNeonConfigured()) {
+    return fallbackTransactions;
+  }
+
+  try {
+    const sql = neon(process.env.DATABASE_URL!);
+    const rows = await sql`
+      SELECT id, member_id as "memberId", member_name as "memberName", amount, date, notes, created_at as "createdAt"
+      FROM transactions
+      ORDER BY date DESC, id DESC
+    `;
+
+    return (rows || []).map((r: any) => ({
+      ...r,
+      amount: Number(r.amount),
+      date: new Date(r.date).toISOString().split('T')[0]
+    })) as Transaction[];
+  } catch (error) {
+    console.error('Neon DB getTransactions failed:', error);
+    return fallbackTransactions;
+  }
+}
+
+export async function addTransaction(tx: Omit<Transaction, 'id'>): Promise<Transaction> {
+  if (!isNeonConfigured()) {
+    const newId = fallbackTransactions.length > 0 ? Math.max(...fallbackTransactions.map(t => t.id)) + 1 : 1;
+    const newTx: Transaction = { ...tx, id: newId, amount: Number(tx.amount) };
+    fallbackTransactions.unshift(newTx);
+    return newTx;
+  }
+
+  try {
+    const sql = neon(process.env.DATABASE_URL!);
+    const rows = await sql`
+      INSERT INTO transactions (member_id, member_name, amount, date, notes)
+      VALUES (
+        ${tx.memberId || null},
+        ${tx.memberName},
+        ${Number(tx.amount)},
+        ${tx.date},
+        ${tx.notes || ''}
+      )
+      RETURNING id, member_id as "memberId", member_name as "memberName", amount, date, notes, created_at as "createdAt"
+    `;
+
+    const res: any = rows[0];
+    return {
+      id: res.id,
+      memberId: res.memberId,
+      memberName: res.memberName,
+      amount: Number(res.amount),
+      date: new Date(res.date).toISOString().split('T')[0],
+      notes: res.notes,
+      createdAt: res.createdAt
+    };
+  } catch (error) {
+    console.error('Failed to add transaction to Neon DB:', error);
+    throw error;
+  }
+}
+
+export async function updateTransaction(id: number, txData: Partial<Omit<Transaction, 'id'>>): Promise<Transaction | null> {
+  if (!isNeonConfigured()) {
+    const index = fallbackTransactions.findIndex(t => t.id === id);
+    if (index === -1) return null;
+    fallbackTransactions[index] = {
+      ...fallbackTransactions[index],
+      ...txData,
+      amount: txData.amount !== undefined ? Number(txData.amount) : fallbackTransactions[index].amount
+    };
+    return fallbackTransactions[index];
+  }
+
+  try {
+    const sql = neon(process.env.DATABASE_URL!);
+    const current = (await sql`SELECT * FROM transactions WHERE id = ${id}`)[0];
+    if (!current) return null;
+
+    const updated = {
+      memberId: txData.memberId !== undefined ? txData.memberId : current.member_id,
+      memberName: txData.memberName ?? current.member_name,
+      amount: txData.amount !== undefined ? Number(txData.amount) : Number(current.amount),
+      date: txData.date ?? new Date(current.date).toISOString().split('T')[0],
+      notes: txData.notes !== undefined ? txData.notes : (current.notes || '')
+    };
+
+    const rows = await sql`
+      UPDATE transactions
+      SET member_id = ${updated.memberId},
+          member_name = ${updated.memberName},
+          amount = ${updated.amount},
+          date = ${updated.date},
+          notes = ${updated.notes}
+      WHERE id = ${id}
+      RETURNING id, member_id as "memberId", member_name as "memberName", amount, date, notes, created_at as "createdAt"
+    `;
+
+    const res: any = rows[0];
+    return {
+      id: res.id,
+      memberId: res.memberId,
+      memberName: res.memberName,
+      amount: Number(res.amount),
+      date: new Date(res.date).toISOString().split('T')[0],
+      notes: res.notes,
+      createdAt: res.createdAt
+    };
+  } catch (error) {
+    console.error('Failed to update transaction in Neon DB:', error);
+    throw error;
+  }
+}
+
+export async function deleteTransaction(id: number): Promise<boolean> {
+  if (!isNeonConfigured()) {
+    const initialLen = fallbackTransactions.length;
+    fallbackTransactions = fallbackTransactions.filter(t => t.id !== id);
+    return fallbackTransactions.length < initialLen;
+  }
+
+  try {
+    const sql = neon(process.env.DATABASE_URL!);
+    await sql`DELETE FROM transactions WHERE id = ${id}`;
+    return true;
+  } catch (error) {
+    console.error('Failed to delete transaction from Neon DB:', error);
+    throw error;
   }
 }

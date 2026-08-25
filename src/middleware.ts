@@ -6,8 +6,6 @@ const ADMIN_SESSION_SECRET = 'dof_secure_admin_auth_token_2026_biougra';
 
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-
-  // Protect admin sub-routes (e.g. /admin/events/new, /admin/events/1/edit)
   if (path.startsWith('/admin/events')) {
     const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
 
@@ -23,3 +21,4 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/admin/events/:path*'],
 };
+
