@@ -590,42 +590,6 @@ export default function AdminPage() {
   // --- DASHBOARD CONTROL PANEL ---
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 flex flex-col transition-colors duration-300">
-      
-      {/* Top Bar with Logout */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm sticky top-0 z-30">
-        <div className="wide-container flex items-center justify-between h-14">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#0a4f6c] dark:bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
-              <Shield className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="font-extrabold text-[#0a4f6c] dark:text-sky-400 text-sm">Defenders of Future</span>
-              <span className="text-[10px] ml-2 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800">
-                Admin Active
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              target="_blank"
-              className="hidden sm:flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-[#0a4f6c] dark:hover:text-sky-300 transition-colors"
-            >
-              <span>Live Site</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Link>
-            
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/60 text-[#aa1c34] dark:text-red-300 text-xs font-bold transition-all border border-red-200 dark:border-red-800"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Log Out</span>
-            </button>
-          </div>
-        </div>
-      </header>
 
       {/* Floating Toast Notification */}
       {toast && (
@@ -909,7 +873,7 @@ export default function AdminPage() {
           <div className="space-y-4">
             
             {/* Statistics Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-3.5">
                 <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
                   <Coins className="w-6 h-6" />
@@ -930,18 +894,6 @@ export default function AdminPage() {
                   <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Transactions</p>
                   <p className="text-lg sm:text-xl font-extrabold text-slate-800 dark:text-slate-100">
                     {transactions.length} donations
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
-                  <TrendingUp className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Average Contribution</p>
-                  <p className="text-lg sm:text-xl font-extrabold text-purple-600 dark:text-purple-400">
-                    {avgContribution.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MAD
                   </p>
                 </div>
               </div>

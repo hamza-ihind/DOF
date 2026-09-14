@@ -157,25 +157,6 @@ export default async function SingleEventPage({
                     ))}
                   </div>
                 </div>
-
-                {/* Sidebar Box 2: Support Card */}
-                <div className="bg-[#0a4f6c] dark:bg-slate-950 text-white rounded-2xl p-6 shadow-md border border-[#0a4f6c] dark:border-slate-800 space-y-3 text-xs">
-                  <h4 className="text-sm font-bold leading-snug">
-                    {eventItem.impactSummary || 'Empowering Local Communities'}
-                  </h4>
-                  <p className="text-slate-200 dark:text-slate-300 text-[11px] leading-relaxed">
-                    Defenders of Future is non-profit and volunteer-driven. Every contribution directly funds schools, food packages, and deep water wells.
-                  </p>
-                  <div className="pt-2">
-                    <Link
-                      href="/contact"
-                      className="w-full inline-flex items-center justify-center py-2.5 rounded-xl bg-[#aa1c34] hover:bg-[#7d1224] text-white font-bold text-xs shadow transition-colors"
-                    >
-                      Support Next Mission
-                    </Link>
-                  </div>
-                </div>
-
               </div>
 
             </div>
