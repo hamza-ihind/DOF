@@ -24,9 +24,10 @@ export default function EventCard({ eventItem, allMembers }: EventCardProps) {
         {/* Cover Image Container */}
         <div className="relative aspect-[16/9] w-full bg-slate-800 overflow-hidden">
           <Image
-            src={eventItem.imageUrl}
+            src={eventItem.imageUrl || '/images/school_renovation.jpg'}
             alt={eventItem.title}
             fill
+            unoptimized={Boolean(eventItem.imageUrl && eventItem.imageUrl.startsWith('http'))}
             className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
         </div>
@@ -73,9 +74,10 @@ export default function EventCard({ eventItem, allMembers }: EventCardProps) {
                 title={`${member.name} - ${member.role}`}
               >
                 <Image
-                  src={member.photoUrl}
+                  src={member.photoUrl || '/images/member_1.jpg'}
                   alt={member.name}
                   fill
+                  unoptimized={Boolean(member.photoUrl && member.photoUrl.startsWith('http'))}
                   className="object-cover"
                 />
               </div>

@@ -15,6 +15,8 @@ export default function MemberCard({ member }: MemberCardProps) {
   const role = (language === 'fr' ? (member.roleFr || member.role) : (member.roleEn || member.role)) || member.role;
   const bio = (language === 'fr' ? (member.bioFr || member.bio) : (member.bioEn || member.bio)) || member.bio;
 
+  const [imgSrc, setImgSrc] = React.useState(member.photoUrl || '/images/member_1.jpg');
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 text-center border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col items-center justify-between relative overflow-hidden group">
       {/* Top Accent Line */}
@@ -26,9 +28,11 @@ export default function MemberCard({ member }: MemberCardProps) {
           <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-[#0a4f6c] to-[#aa1c34] shadow-sm">
             <div className="relative w-full h-full rounded-full overflow-hidden bg-slate-100 dark:bg-slate-700 border border-white dark:border-slate-800">
               <Image
-                src={member.photoUrl}
+                src={imgSrc}
                 alt={member.name}
                 fill
+                unoptimized={imgSrc.startsWith('http')}
+                onError={() => setImgSrc('/images/member_1.jpg')}
                 className="object-cover"
               />
             </div>

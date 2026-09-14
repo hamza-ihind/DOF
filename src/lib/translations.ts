@@ -8,10 +8,22 @@ export const translations = {
     'nav.activities': 'Activities',
     'nav.members': 'Members',
     'nav.events': 'Events',
+    'nav.newsletter': 'Newsletter',
     'nav.contact': 'Contact',
     'nav.support': 'Support Us',
     'nav.admin': 'Admin',
     'nav.siteLocation': 'Biougra, Morocco',
+
+    // Newsletter Page
+    'newsletter.title': 'Association Newsletter & Media',
+    'newsletter.subtitle': 'Explore our latest video features, field reports, media appearances, and social updates.',
+    'newsletter.featured': 'Featured Story',
+    'newsletter.latest': 'Latest Update',
+    'newsletter.watchVideo': 'Watch on YouTube',
+    'newsletter.viewPost': 'View on Social Media',
+    'newsletter.openLink': 'Open Link',
+    'newsletter.noNewsletters': 'No newsletter stories published yet.',
+    'newsletter.noNewslettersDesc': 'Admin will publish upcoming association media and video stories here.',
 
     // Hero Section
     'hero.titlePrefix': 'Defenders of',
@@ -120,10 +132,22 @@ export const translations = {
     'nav.activities': 'Activités',
     'nav.members': 'Membres',
     'nav.events': 'Événements',
+    'nav.newsletter': 'Newsletter',
     'nav.contact': 'Contact',
     'nav.support': 'Soutenir',
     'nav.admin': 'Admin',
     'nav.siteLocation': 'Biougra, Maroc',
+
+    // Newsletter Page
+    'newsletter.title': 'Newsletter & Médias',
+    'newsletter.subtitle': 'Découvrez nos dernières vidéos, reportages sur le terrain, parutions et actualités.',
+    'newsletter.featured': 'À la Une',
+    'newsletter.latest': 'Dernière Actualité',
+    'newsletter.watchVideo': 'Voir sur YouTube',
+    'newsletter.viewPost': 'Voir sur les réseaux',
+    'newsletter.openLink': 'Consulter le lien',
+    'newsletter.noNewsletters': 'Aucune actualité publiée pour le moment.',
+    'newsletter.noNewslettersDesc': 'Les prochaines vidéos et publications de l\'association seront partagées ici.',
 
     // Hero Section
     'hero.titlePrefix': 'Defenders of',

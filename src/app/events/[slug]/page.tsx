@@ -76,11 +76,12 @@ export default async function SingleEventPage({
               </div>
 
               {/* Event Main Banner */}
-              <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden shadow border border-slate-200 dark:border-slate-700">
+              <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden shadow border border-slate-200 dark:border-slate-700 bg-slate-900">
                 <Image
-                  src={eventItem.imageUrl}
+                  src={eventItem.imageUrl || '/images/school_renovation.jpg'}
                   alt={eventItem.title}
                   fill
+                  unoptimized={Boolean(eventItem.imageUrl && eventItem.imageUrl.startsWith('http'))}
                   className="object-cover"
                   priority
                 />
@@ -144,9 +145,10 @@ export default async function SingleEventPage({
                         {/* Circle Photo */}
                         <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white dark:border-slate-800 shadow-sm bg-slate-200 dark:bg-slate-700">
                           <Image
-                            src={member.photoUrl}
+                            src={member.photoUrl || '/images/member_1.jpg'}
                             alt={member.name}
                             fill
+                            unoptimized={Boolean(member.photoUrl && member.photoUrl.startsWith('http'))}
                             className="object-cover"
                           />
                         </div>

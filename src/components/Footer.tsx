@@ -51,6 +51,9 @@ export default function Footer() {
                 <Link href="/events" className="hover:text-[#dfa234] transition-colors">{t('nav.events')}</Link>
               </li>
               <li>
+                <Link href="/newsletter" className="hover:text-[#dfa234] transition-colors">{t('nav.newsletter')}</Link>
+              </li>
+              <li>
                 <Link href="/contact" className="hover:text-[#dfa234] transition-colors">{t('nav.contact')}</Link>
               </li>
             </ul>

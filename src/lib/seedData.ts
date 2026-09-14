@@ -44,6 +44,17 @@ export interface Transaction {
   createdAt?: string;
 }
 
+export interface NewsletterItem {
+  id: number;
+  title: string;
+  description: string;
+  imageUrl: string;
+  linkUrl: string;
+  category?: string;
+  date: string;
+  createdAt?: string;
+}
+
 export const INITIAL_MEMBERS: Member[] = [
   {
     id: 1,
@@ -182,5 +193,17 @@ export const INITIAL_MEMBERS: Member[] = [
 export const INITIAL_EVENTS: EventItem[] = [];
 
 export const INITIAL_TRANSACTIONS: Transaction[] = [];
+
+export const INITIAL_NEWSLETTERS: NewsletterItem[] = [
+  {
+    id: 1,
+    title: 'School Refurbishment & Solar Installations in Chtouka Aït Baha',
+    description: 'Watch the full video documentation of our team restoring classroom walls, bringing art, and distributing school bags to children.',
+    imageUrl: '/images/school_renovation.jpg',
+    linkUrl: 'https://www.youtube.com',
+    category: 'YouTube Video',
+    date: '2026-08-15'
+  }
+];
 
 export const MOCK_CAROUSEL_ITEMS: any[] = [];

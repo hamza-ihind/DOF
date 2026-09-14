@@ -25,7 +25,15 @@ import {
   Coins,
   TrendingUp,
   HeartHandshake,
-  Check
+  Check,
+  Newspaper,
+  Play,
+  Instagram,
+  Video,
+  Sparkles,
+  ArrowUpRight,
+  Clock,
+  Image as ImageIcon
 } from 'lucide-react';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
@@ -44,6 +52,14 @@ interface Member {
   location: string;
 }
 
+interface EventDay {
+  dayNumber: number;
+  title: string;
+  date: string;
+  description: string;
+  images: string[];
+}
+
 interface EventItem {
   id: number;
   slug: string;
@@ -56,6 +72,7 @@ interface EventItem {
   content: string;
   impactSummary: string;
   contributingMemberIds?: number[];
+  timelineDays?: EventDay[];
 }
 
 interface Transaction {
@@ -68,9 +85,20 @@ interface Transaction {
   createdAt?: string;
 }
 
+interface NewsletterItem {
+  id: number;
+  title: string;
+  description: string;
+  imageUrl: string;
+  linkUrl: string;
+  category?: string;
+  date: string;
+  createdAt?: string;
+}
+
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [activeTab, setActiveTab] = useState<'members' | 'events' | 'transactions'>('members');
+  const [activeTab, setActiveTab] = useState<'members' | 'events' | 'newsletters' | 'transactions'>('members');
 
   // Auth form state
   const [username, setUsername] = useState('');
@@ -83,12 +111,14 @@ export default function AdminPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [newsletters, setNewsletters] = useState<NewsletterItem[]>([]);
   const [loadingData, setLoadingData] = useState(false);
 
   // Filter state
   const [memberSearch, setMemberSearch] = useState('');
   const [eventSearch, setEventSearch] = useState('');
   const [transactionSearch, setTransactionSearch] = useState('');
+  const [newsletterSearch, setNewsletterSearch] = useState('');
 
   // Member Modal State
   const [memberModalOpen, setMemberModalOpen] = useState(false);
@@ -96,9 +126,41 @@ export default function AdminPage() {
   const [memberForm, setMemberForm] = useState({
     name: '',
     role: '',
+    roleEn: '',
+    roleFr: '',
     photoUrl: '/images/member_1.jpg',
     bio: '',
+    bioEn: '',
+    bioFr: '',
     location: 'Biougra, Morocco'
+  });
+
+  // Event Modal State (With Timeline Days and Contributing Members)
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
+  const [eventForm, setEventForm] = useState({
+    title: '',
+    category: 'School Refurbishment',
+    date: new Date().toISOString().split('T')[0],
+    location: 'Biougra Region',
+    imageUrl: '/images/school_renovation.jpg',
+    excerpt: '',
+    content: '',
+    impactSummary: '',
+    contributingMemberIds: [] as number[],
+    timelineDays: [] as EventDay[]
+  });
+
+  // Newsletter Modal State
+  const [newsletterModalOpen, setNewsletterModalOpen] = useState(false);
+  const [editingNewsletter, setEditingNewsletter] = useState<NewsletterItem | null>(null);
+  const [newsletterForm, setNewsletterForm] = useState({
+    title: '',
+    description: '',
+    imageUrl: '/images/school_renovation.jpg',
+    linkUrl: '',
+    category: 'YouTube Video',
+    date: new Date().toISOString().split('T')[0]
   });
 
   // Transaction Modal State
@@ -113,7 +175,7 @@ export default function AdminPage() {
     notes: ''
   });
 
-  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'member' | 'event' | 'transaction'; id: number; name: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'member' | 'event' | 'transaction' | 'newsletter'; id: number; name: string } | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Toast Helper
@@ -143,19 +205,22 @@ export default function AdminPage() {
   const fetchDashboardData = async () => {
     setLoadingData(true);
     try {
-      const [membersRes, eventsRes, transactionsRes] = await Promise.all([
+      const [membersRes, eventsRes, transactionsRes, newslettersRes] = await Promise.all([
         fetch('/api/members'),
         fetch('/api/events'),
-        fetch('/api/transactions')
+        fetch('/api/transactions'),
+        fetch('/api/newsletters')
       ]);
 
       const membersData = await membersRes.json();
       const eventsData = await eventsRes.json();
       const transactionsData = await transactionsRes.json();
+      const newslettersData = await newslettersRes.json();
 
       if (membersData.success) setMembers(membersData.members);
       if (eventsData.success) setEvents(eventsData.events);
       if (transactionsData.success) setTransactions(transactionsData.transactions);
+      if (newslettersData.success) setNewsletters(newslettersData.newsletters);
     } catch (err) {
       showToast('Failed to load dashboard data', 'error');
     } finally {
@@ -210,8 +275,12 @@ export default function AdminPage() {
     setMemberForm({
       name: '',
       role: '',
+      roleEn: '',
+      roleFr: '',
       photoUrl: '/images/member_1.jpg',
       bio: '',
+      bioEn: '',
+      bioFr: '',
       location: 'Biougra, Morocco'
     });
     setMemberModalOpen(true);
@@ -222,8 +291,12 @@ export default function AdminPage() {
     setMemberForm({
       name: member.name,
       role: member.role,
+      roleEn: member.roleEn || member.role,
+      roleFr: member.roleFr || member.role,
       photoUrl: member.photoUrl,
       bio: member.bio || '',
+      bioEn: member.bioEn || member.bio || '',
+      bioFr: member.bioFr || member.bio || '',
       location: member.location || 'Biougra, Morocco'
     });
     setMemberModalOpen(true);
@@ -240,7 +313,7 @@ export default function AdminPage() {
         });
         const data = await res.json();
         if (data.success) {
-          showToast(`Member "${memberForm.name}" updated!`);
+          showToast('Member "' + memberForm.name + '" updated!');
           fetchDashboardData();
           setMemberModalOpen(false);
         } else {
@@ -254,7 +327,7 @@ export default function AdminPage() {
         });
         const data = await res.json();
         if (data.success) {
-          showToast(`Member "${memberForm.name}" added successfully!`);
+          showToast('Member "' + memberForm.name + '" added successfully!');
           fetchDashboardData();
           setMemberModalOpen(false);
         } else {
@@ -268,7 +341,7 @@ export default function AdminPage() {
 
   const handleDeleteMember = async (id: number) => {
     try {
-      const res = await fetch(`/api/members?id=${id}`, { method: 'DELETE' });
+      const res = await fetch('/api/members?id=' + id, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
         showToast('Member deleted successfully');
@@ -283,10 +356,127 @@ export default function AdminPage() {
     }
   };
 
-  // --- Event Handlers ---
+  // --- Event Handlers (with Timeline Days and Members) ---
+  const openAddEventModal = () => {
+    setEditingEvent(null);
+    setEventForm({
+      title: '',
+      category: 'School Refurbishment',
+      date: new Date().toISOString().split('T')[0],
+      location: 'Biougra Region',
+      imageUrl: '/images/school_renovation.jpg',
+      excerpt: '',
+      content: '',
+      impactSummary: '',
+      contributingMemberIds: members.slice(0, 4).map(m => m.id),
+      timelineDays: [
+        {
+          dayNumber: 1,
+          title: 'Field Setup & Initial Preparation',
+          date: new Date().toISOString().split('T')[0],
+          description: 'Team arrival, setup of operations, and community alignment.',
+          images: ['/images/school_renovation.jpg']
+        }
+      ]
+    });
+    setEventModalOpen(true);
+  };
+
+  const openEditEventModal = (event: EventItem) => {
+    setEditingEvent(event);
+    setEventForm({
+      title: event.title,
+      category: event.category,
+      date: event.date,
+      location: event.location,
+      imageUrl: event.imageUrl,
+      excerpt: event.excerpt,
+      content: event.content,
+      impactSummary: event.impactSummary || '',
+      contributingMemberIds: event.contributingMemberIds || [],
+      timelineDays: event.timelineDays && event.timelineDays.length > 0 ? event.timelineDays : []
+    });
+    setEventModalOpen(true);
+  };
+
+  const addTimelineDay = () => {
+    const nextDayNum = eventForm.timelineDays.length + 1;
+    setEventForm({
+      ...eventForm,
+      timelineDays: [
+        ...eventForm.timelineDays,
+        {
+          dayNumber: nextDayNum,
+          title: 'Day ' + nextDayNum + ' Activity',
+          date: eventForm.date,
+          description: '',
+          images: [eventForm.imageUrl || '/images/school_renovation.jpg']
+        }
+      ]
+    });
+  };
+
+  const updateTimelineDay = (index: number, field: keyof EventDay, value: any) => {
+    const updated = [...eventForm.timelineDays];
+    updated[index] = { ...updated[index], [field]: value };
+    setEventForm({ ...eventForm, timelineDays: updated });
+  };
+
+  const removeTimelineDay = (index: number) => {
+    const updated = eventForm.timelineDays.filter((_, idx) => idx !== index)
+      .map((day, idx) => ({ ...day, dayNumber: idx + 1 }));
+    setEventForm({ ...eventForm, timelineDays: updated });
+  };
+
+  const toggleContributingMember = (memberId: number) => {
+    const current = eventForm.contributingMemberIds;
+    if (current.includes(memberId)) {
+      setEventForm({ ...eventForm, contributingMemberIds: current.filter(id => id !== memberId) });
+    } else {
+      setEventForm({ ...eventForm, contributingMemberIds: [...current, memberId] });
+    }
+  };
+
+  const handleSaveEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingEvent) {
+        const res = await fetch('/api/events', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingEvent.id, ...eventForm })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Event "' + eventForm.title + '" updated!');
+          fetchDashboardData();
+          setEventModalOpen(false);
+        } else {
+          showToast(data.error || 'Failed to update event', 'error');
+        }
+      } else {
+        const res = await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(eventForm)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Event "' + eventForm.title + '" created successfully!');
+          fetchDashboardData();
+          setEventModalOpen(false);
+        } else {
+          showToast(data.error || 'Failed to add event', 'error');
+        }
+      }
+    } catch (err) {
+      showToast('Network error while saving event', 'error');
+    }
+  };
+
   const handleDeleteEvent = async (id: number) => {
     try {
-      const res = await fetch(`/api/events?id=${id}`, { method: 'DELETE' });
+      const res = await fetch('/api/events?id=' + id, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
         showToast('Event deleted successfully');
@@ -296,6 +486,92 @@ export default function AdminPage() {
       }
     } catch (err) {
       showToast('Network error during event deletion', 'error');
+    } finally {
+      setDeleteConfirm(null);
+    }
+  };
+
+  // --- Newsletter Handlers ---
+  const openAddNewsletterModal = () => {
+    setEditingNewsletter(null);
+    setNewsletterForm({
+      title: '',
+      description: '',
+      imageUrl: '/images/school_renovation.jpg',
+      linkUrl: '',
+      category: 'YouTube Video',
+      date: new Date().toISOString().split('T')[0]
+    });
+    setNewsletterModalOpen(true);
+  };
+
+  const openEditNewsletterModal = (item: NewsletterItem) => {
+    setEditingNewsletter(item);
+    setNewsletterForm({
+      title: item.title,
+      description: item.description,
+      imageUrl: item.imageUrl,
+      linkUrl: item.linkUrl,
+      category: item.category || 'YouTube Video',
+      date: item.date
+    });
+    setNewsletterModalOpen(true);
+  };
+
+  const handleSaveNewsletter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterForm.title || !newsletterForm.linkUrl) {
+      showToast('Please fill in both Title and Link URL', 'error');
+      return;
+    }
+
+    try {
+      if (editingNewsletter) {
+        const res = await fetch('/api/newsletters', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingNewsletter.id, ...newsletterForm })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Newsletter "' + newsletterForm.title + '" updated!');
+          fetchDashboardData();
+          setNewsletterModalOpen(false);
+        } else {
+          showToast(data.error || 'Failed to update newsletter', 'error');
+        }
+      } else {
+        const res = await fetch('/api/newsletters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newsletterForm)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Newsletter "' + newsletterForm.title + '" published!');
+          fetchDashboardData();
+          setNewsletterModalOpen(false);
+        } else {
+          showToast(data.error || 'Failed to publish newsletter', 'error');
+        }
+      }
+    } catch (err) {
+      showToast('Network error while saving newsletter', 'error');
+    }
+  };
+
+  const handleDeleteNewsletter = async (id: number) => {
+    try {
+      const res = await fetch('/api/newsletters?id=' + id, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Newsletter deleted successfully');
+        fetchDashboardData();
+      } else {
+        showToast('Failed to delete newsletter', 'error');
+      }
+    } catch (err) {
+      showToast('Network error during newsletter deletion', 'error');
     } finally {
       setDeleteConfirm(null);
     }
@@ -356,7 +632,7 @@ export default function AdminPage() {
         });
         const data = await res.json();
         if (data.success) {
-          showToast(`Transaction for ${transactionForm.memberName} updated!`);
+          showToast('Transaction for ' + transactionForm.memberName + ' updated!');
           fetchDashboardData();
           setTransactionModalOpen(false);
         } else {
@@ -376,7 +652,7 @@ export default function AdminPage() {
         });
         const data = await res.json();
         if (data.success) {
-          showToast(`Charity donation of ${numAmount} MAD recorded!`);
+          showToast('Charity donation of ' + numAmount + ' MAD recorded!');
           fetchDashboardData();
           setTransactionModalOpen(false);
         } else {
@@ -390,7 +666,7 @@ export default function AdminPage() {
 
   const handleDeleteTransaction = async (id: number) => {
     try {
-      const res = await fetch(`/api/transactions?id=${id}`, { method: 'DELETE' });
+      const res = await fetch('/api/transactions?id=' + id, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
         showToast('Transaction deleted successfully');
@@ -414,7 +690,7 @@ export default function AdminPage() {
 
     const dataToExport = transactions.map((t, index) => ({
       'No.': index + 1,
-      'Transaction ID': `DOF-TX-${String(t.id).padStart(4, '0')}`,
+      'Transaction ID': 'DOF-TX-' + String(t.id).padStart(4, '0'),
       'Donator (DOF Member)': t.memberName,
       'Amount (MAD)': t.amount,
       'Date': t.date,
@@ -426,7 +702,6 @@ export default function AdminPage() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'DOF Transactions');
 
-    // Set column widths for readability
     worksheet['!cols'] = [
       { wch: 6 },
       { wch: 18 },
@@ -438,7 +713,7 @@ export default function AdminPage() {
     ];
 
     const today = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(workbook, `DOF_Charity_Transactions_${today}.xlsx`);
+    XLSX.writeFile(workbook, 'DOF_Charity_Transactions_' + today + '.xlsx');
     showToast('Excel report downloaded successfully!');
   };
 
@@ -461,6 +736,16 @@ export default function AdminPage() {
     );
   }, [events, eventSearch]);
 
+  const filteredNewsletters = useMemo(() => {
+    const q = newsletterSearch.toLowerCase();
+    return newsletters.filter(n => 
+      n.title.toLowerCase().includes(q) || 
+      n.description.toLowerCase().includes(q) ||
+      (n.category && n.category.toLowerCase().includes(q)) ||
+      n.linkUrl.toLowerCase().includes(q)
+    );
+  }, [newsletters, newsletterSearch]);
+
   const filteredTransactions = useMemo(() => {
     const q = transactionSearch.toLowerCase();
     return transactions.filter(t => 
@@ -470,23 +755,16 @@ export default function AdminPage() {
     );
   }, [transactions, transactionSearch]);
 
-  // Filtered member dropdown in transaction modal
   const filteredSelectMembers = useMemo(() => {
     const q = memberSelectSearch.toLowerCase();
     if (!q) return members;
     return members.filter(m => m.name.toLowerCase().includes(q) || m.role.toLowerCase().includes(q));
   }, [members, memberSelectSearch]);
 
-  // Statistics calculation for transactions
   const totalAmountCollected = useMemo(() => {
     return transactions.reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
   }, [transactions]);
 
-  const avgContribution = useMemo(() => {
-    return transactions.length > 0 ? (totalAmountCollected / transactions.length) : 0;
-  }, [transactions, totalAmountCollected]);
-
-  // Loading screen during auth check
   if (isAuthenticated === null) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-800 dark:text-slate-200">
@@ -538,7 +816,7 @@ export default function AdminPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Enter admin username"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#0a4f6c] dark:focus:border-sky-400"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#0a4f6c] dark:focus:border-sky-400"
                   />
                 </div>
               </div>
@@ -555,7 +833,7 @@ export default function AdminPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-10 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#0a4f6c] dark:focus:border-sky-400"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-10 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#0a4f6c] dark:focus:border-sky-400"
                   />
                   <button
                     type="button"
@@ -591,13 +869,12 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 flex flex-col transition-colors duration-300">
 
-      {/* Floating Toast Notification */}
       {toast && (
-        <div className={`fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl shadow-xl border flex items-center gap-2 text-xs font-bold transition-all animate-bounce ${
+        <div className={'fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl shadow-xl border flex items-center gap-2 text-xs font-bold transition-all animate-bounce ' + (
           toast.type === 'success'
             ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-500/20'
             : 'bg-[#aa1c34] text-white border-red-500 shadow-red-500/20'
-        }`}>
+        )}>
           {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
           <span>{toast.message}</span>
         </div>
@@ -613,18 +890,18 @@ export default function AdminPage() {
               Admin Control Panel
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-              Manage association members, event reports, timeline days, and charity transactions.
+              Manage association members, multi-day event reports, video newsletters, and charity transactions.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setActiveTab('members')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={'flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ' + (
                 activeTab === 'members'
                   ? 'bg-[#0a4f6c] dark:bg-blue-600 text-white shadow-md'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-[#0a4f6c] dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-              }`}
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-[#0a4f6c] border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+              )}
             >
               <Users className="w-4 h-4" />
               Members ({members.length})
@@ -632,26 +909,38 @@ export default function AdminPage() {
 
             <button
               onClick={() => setActiveTab('events')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={'flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ' + (
                 activeTab === 'events'
                   ? 'bg-[#aa1c34] dark:bg-red-600 text-white shadow-md'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-[#aa1c34] dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-              }`}
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-[#aa1c34] border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+              )}
             >
               <Calendar className="w-4 h-4" />
               Events ({events.length})
             </button>
 
             <button
+              onClick={() => setActiveTab('newsletters')}
+              className={'flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ' + (
+                activeTab === 'newsletters'
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-purple-600 border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+              )}
+            >
+              <Newspaper className="w-4 h-4" />
+              Newsletter ({newsletters.length})
+            </button>
+
+            <button
               onClick={() => setActiveTab('transactions')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={'flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ' + (
                 activeTab === 'transactions'
                   ? 'bg-emerald-600 dark:bg-emerald-500 text-white shadow-md'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-              }`}
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-600 border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+              )}
             >
               <Receipt className="w-4 h-4" />
-              TRANSACTIONS ({transactions.length})
+              Transactions ({transactions.length})
             </button>
           </div>
         </div>
@@ -659,7 +948,6 @@ export default function AdminPage() {
         {/* --- MEMBERS TABLE VIEW --- */}
         {activeTab === 'members' && (
           <div className="space-y-3">
-            {/* Search & Add Member */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
               <div className="relative w-full sm:w-80">
                 <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -668,27 +956,26 @@ export default function AdminPage() {
                   placeholder="Search members by name, role, location..."
                   value={memberSearch}
                   onChange={(e) => setMemberSearch(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#0a4f6c] dark:focus:border-sky-400 focus:bg-white dark:focus:bg-slate-900"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#0a4f6c]"
                 />
               </div>
 
               <button
                 onClick={openAddMemberModal}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg bg-[#0a4f6c] dark:bg-blue-600 hover:bg-[#083c53] dark:hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg bg-[#0a4f6c] dark:bg-blue-600 hover:bg-[#083c53] text-white text-xs font-bold shadow-sm transition-all"
               >
                 <Plus className="w-4 h-4" />
                 Add New Member
               </button>
             </div>
 
-            {/* MEMBERS DATA TABLE */}
             {loadingData ? (
               <div className="py-12 text-center text-slate-500 dark:text-slate-400 text-xs font-semibold bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                 Loading members...
               </div>
             ) : filteredMembers.length === 0 ? (
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-500 dark:text-slate-400">
-                <Users className="w-10 h-10 mx-auto mb-2 text-slate-400 dark:text-slate-500" />
+                <Users className="w-10 h-10 mx-auto mb-2 text-slate-400" />
                 <p className="text-sm font-bold text-slate-700 dark:text-slate-200">No members found</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Add a new member to display in the table.</p>
               </div>
@@ -735,14 +1022,14 @@ export default function AdminPage() {
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => openEditMemberModal(member)}
-                                className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center gap-1 px-2.5 transition-colors border border-slate-200 dark:border-slate-600"
+                                className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center gap-1 px-2.5 transition-colors border border-slate-200 dark:border-slate-600"
                               >
                                 <Pencil className="w-3.5 h-3.5 text-[#0a4f6c] dark:text-sky-300" />
                                 Edit
                               </button>
                               <button
                                 onClick={() => setDeleteConfirm({ type: 'member', id: member.id, name: member.name })}
-                                className="p-1.5 rounded-md bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/60 text-[#aa1c34] dark:text-red-300 font-semibold text-xs flex items-center gap-1 px-2.5 transition-colors border border-red-200 dark:border-red-800"
+                                className="p-1.5 rounded-md bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-[#aa1c34] dark:text-red-300 font-semibold text-xs flex items-center gap-1 px-2.5 transition-colors border border-red-200 dark:border-red-800"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                                 Delete
@@ -762,38 +1049,43 @@ export default function AdminPage() {
         {/* --- EVENTS VIEW --- */}
         {activeTab === 'events' && (
           <div className="space-y-3">
-            {/* Search & Route to New Event Page */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
               <div className="relative w-full sm:w-80">
                 <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search events by title, category..."
+                  placeholder="Search events by title, category, location..."
                   value={eventSearch}
                   onChange={(e) => setEventSearch(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#aa1c34] dark:focus:border-red-400 focus:bg-white dark:focus:bg-slate-900"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#aa1c34]"
                 />
               </div>
 
-              <Link
-                href="/admin/events/new"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg bg-[#aa1c34] dark:bg-red-700 hover:bg-[#7d1224] dark:hover:bg-red-800 text-white text-xs font-bold shadow-sm transition-all"
+              <button
+                onClick={openAddEventModal}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg bg-[#aa1c34] dark:bg-red-700 hover:bg-[#7d1224] text-white text-xs font-bold shadow-sm transition-all"
               >
                 <Plus className="w-4 h-4" />
                 Create New Event Mission
-              </Link>
+              </button>
             </div>
 
-            {/* EVENTS TABLE */}
             {loadingData ? (
               <div className="py-12 text-center text-slate-500 dark:text-slate-400 text-xs font-semibold bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                 Loading events...
               </div>
             ) : filteredEvents.length === 0 ? (
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-500 dark:text-slate-400">
-                <Calendar className="w-10 h-10 mx-auto mb-2 text-slate-400 dark:text-slate-500" />
+                <Calendar className="w-10 h-10 mx-auto mb-2 text-slate-400" />
                 <p className="text-sm font-bold text-slate-700 dark:text-slate-200">No events found</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Create a new event mission to manage multi-day content.</p>
+                <button
+                  onClick={openAddEventModal}
+                  className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#aa1c34] text-white text-xs font-bold shadow"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add First Event
+                </button>
               </div>
             ) : (
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -804,6 +1096,7 @@ export default function AdminPage() {
                         <th className="py-2.5 px-3.5">Cover</th>
                         <th className="py-2.5 px-3.5">Event Title</th>
                         <th className="py-2.5 px-3.5">Category</th>
+                        <th className="py-2.5 px-3.5">Days</th>
                         <th className="py-2.5 px-3.5">Date</th>
                         <th className="py-2.5 px-3.5">Location</th>
                         <th className="py-2.5 px-3.5">Impact Tag</th>
@@ -824,11 +1117,20 @@ export default function AdminPage() {
                             />
                           </td>
                           <td className="py-2.5 px-3.5 font-bold text-slate-900 dark:text-slate-100 max-w-xs">
-                            {event.title}
+                            <Link href={'/events/' + event.slug} target="_blank" className="hover:text-[#aa1c34] flex items-center gap-1 group">
+                              <span>{event.title}</span>
+                              <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 text-slate-400 transition-opacity" />
+                            </Link>
                           </td>
                           <td className="py-2.5 px-3.5">
-                            <span className="inline-block text-[10px] font-extrabold bg-[#0a4f6c]/10 dark:bg-sky-950/60 text-[#0a4f6c] dark:text-sky-300 px-2.5 py-0.5 rounded-md border border-[#0a4f6c]/20 dark:border-sky-800/50">
+                            <span className="inline-block text-[10px] font-extrabold bg-[#0a4f6c]/10 dark:bg-sky-950/60 text-[#0a4f6c] dark:text-sky-300 px-2.5 py-0.5 rounded-md border border-[#0a4f6c]/20">
                               {event.category}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 font-bold text-[10px] text-slate-700 dark:text-slate-300">
+                              <Clock className="w-3 h-3 text-[#0a4f6c] dark:text-sky-400" />
+                              {event.timelineDays ? event.timelineDays.length : 0} days
                             </span>
                           </td>
                           <td className="py-2.5 px-3.5 font-mono text-slate-600 dark:text-slate-300">
@@ -842,16 +1144,153 @@ export default function AdminPage() {
                           </td>
                           <td className="py-2.5 px-3.5 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Link
-                                href={`/admin/events/${event.id}/edit`}
-                                className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center gap-1 px-2.5 transition-colors border border-slate-200 dark:border-slate-600"
+                              <button
+                                onClick={() => openEditEventModal(event)}
+                                className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center gap-1 px-2.5 transition-colors border border-slate-200 dark:border-slate-600"
                               >
                                 <Pencil className="w-3.5 h-3.5 text-[#0a4f6c] dark:text-sky-300" />
                                 Edit
-                              </Link>
+                              </button>
                               <button
                                 onClick={() => setDeleteConfirm({ type: 'event', id: event.id, name: event.title })}
-                                className="p-1.5 rounded-md bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/60 text-[#aa1c34] dark:text-red-300 font-semibold text-xs flex items-center gap-1 px-2.5 transition-colors border border-red-200 dark:border-red-800"
+                                className="p-1.5 rounded-md bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-[#aa1c34] dark:text-red-300 font-semibold text-xs flex items-center gap-1 px-2.5 transition-colors border border-red-200 dark:border-red-800"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* --- NEWSLETTERS TAB VIEW --- */}
+        {activeTab === 'newsletters' && (
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="relative w-full sm:w-80">
+                <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search newsletters by title, category, link..."
+                  value={newsletterSearch}
+                  onChange={(e) => setNewsletterSearch(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Link
+                  href="/newsletter"
+                  target="_blank"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-600 transition-all"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>View Public Page</span>
+                </Link>
+
+                <button
+                  onClick={openAddNewsletterModal}
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Newsletter Story
+                </button>
+              </div>
+            </div>
+
+            {loadingData ? (
+              <div className="py-12 text-center text-slate-500 dark:text-slate-400 text-xs font-semibold bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                Loading newsletters...
+              </div>
+            ) : filteredNewsletters.length === 0 ? (
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-500 dark:text-slate-400">
+                <Newspaper className="w-10 h-10 mx-auto mb-2 text-slate-400" />
+                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">No newsletter stories yet</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Publish YouTube videos, Instagram posts, or media articles to appear on the public Newsletter page.</p>
+                <button
+                  onClick={openAddNewsletterModal}
+                  className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-bold shadow"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add First Newsletter
+                </button>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-100 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        <th className="py-2.5 px-3.5">Image</th>
+                        <th className="py-2.5 px-3.5">Title & Excerpt</th>
+                        <th className="py-2.5 px-3.5">Category</th>
+                        <th className="py-2.5 px-3.5">Date</th>
+                        <th className="py-2.5 px-3.5">External Target Link</th>
+                        <th className="py-2.5 px-3.5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700 text-xs">
+                      {filteredNewsletters.map((item, idx) => (
+                        <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition-colors">
+                          <td className="py-2.5 px-3.5">
+                            <div className="relative w-14 h-10 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-900">
+                              <img
+                                src={item.imageUrl}
+                                alt={item.title}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLElement).setAttribute('src', '/images/school_renovation.jpg');
+                                }}
+                              />
+                              {idx === 0 && (
+                                <div className="absolute top-0.5 right-0.5 bg-amber-400 text-black text-[9px] font-extrabold px-1 rounded">
+                                  TOP
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3.5 max-w-sm">
+                            <div className="font-bold text-slate-900 dark:text-slate-100 line-clamp-1">{item.title}</div>
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">{item.description}</div>
+                          </td>
+                          <td className="py-2.5 px-3.5">
+                            <span className="inline-block text-[10px] font-bold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
+                              {item.category || 'Media'}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3.5 font-mono text-slate-600 dark:text-slate-300">
+                            {item.date}
+                          </td>
+                          <td className="py-2.5 px-3.5 max-w-xs">
+                            <a
+                              href={item.linkUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-[#0a4f6c] dark:text-sky-300 hover:text-[#aa1c34] font-medium flex items-center gap-1 truncate"
+                            >
+                              <span className="truncate">{item.linkUrl}</span>
+                              <ExternalLink className="w-3 h-3 shrink-0" />
+                            </a>
+                          </td>
+                          <td className="py-2.5 px-3.5 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => openEditNewsletterModal(item)}
+                                className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center gap-1 px-2.5 transition-colors border border-slate-200 dark:border-slate-600"
+                              >
+                                <Pencil className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirm({ type: 'newsletter', id: item.id, name: item.title })}
+                                className="p-1.5 rounded-md bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-[#aa1c34] dark:text-red-300 font-semibold text-xs flex items-center gap-1 px-2.5 transition-colors border border-red-200 dark:border-red-800"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                                 Delete
@@ -871,8 +1310,6 @@ export default function AdminPage() {
         {/* --- TRANSACTIONS VIEW --- */}
         {activeTab === 'transactions' && (
           <div className="space-y-4">
-            
-            {/* Statistics Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-3.5">
                 <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
@@ -899,7 +1336,6 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Actions Bar: Search, Export Excel, Add Transaction */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
               <div className="relative w-full sm:w-80">
                 <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -908,14 +1344,14 @@ export default function AdminPage() {
                   placeholder="Search by donator member, notes, date..."
                   value={transactionSearch}
                   onChange={(e) => setTransactionSearch(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-400 focus:bg-white dark:focus:bg-slate-900"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={exportTransactionsToExcel}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition-all"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all"
                   title="Export all transactions to an Excel (.xlsx) spreadsheet"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
@@ -924,7 +1360,7 @@ export default function AdminPage() {
 
                 <button
                   onClick={openAddTransactionModal}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg bg-[#0a4f6c] dark:bg-blue-600 hover:bg-[#083c53] dark:hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg bg-[#0a4f6c] dark:bg-blue-600 hover:bg-[#083c53] text-white text-xs font-bold shadow-sm transition-all"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Record Transaction</span>
@@ -932,23 +1368,15 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* TRANSACTIONS DATA TABLE */}
             {loadingData ? (
               <div className="py-12 text-center text-slate-500 dark:text-slate-400 text-xs font-semibold bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                 Loading charity transactions...
               </div>
             ) : filteredTransactions.length === 0 ? (
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-500 dark:text-slate-400">
-                <HeartHandshake className="w-10 h-10 mx-auto mb-2 text-slate-400 dark:text-slate-500" />
+                <HeartHandshake className="w-10 h-10 mx-auto mb-2 text-slate-400" />
                 <p className="text-sm font-bold text-slate-700 dark:text-slate-200">No transactions recorded yet</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Record member donations to track association funds and export to Excel.</p>
-                <button
-                  onClick={openAddTransactionModal}
-                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add First Transaction</span>
-                </button>
               </div>
             ) : (
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -1005,14 +1433,14 @@ export default function AdminPage() {
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   onClick={() => openEditTransactionModal(tx)}
-                                  className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center gap-1 px-2.5 transition-colors border border-slate-200 dark:border-slate-600"
+                                  className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center gap-1 px-2.5 transition-colors border border-slate-200 dark:border-slate-600"
                                 >
                                   <Pencil className="w-3.5 h-3.5 text-[#0a4f6c] dark:text-sky-300" />
                                   Edit
                                 </button>
                                 <button
-                                  onClick={() => setDeleteConfirm({ type: 'transaction', id: tx.id, name: `Transaction of ${tx.amount} MAD by ${tx.memberName}` })}
-                                  className="p-1.5 rounded-md bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/60 text-[#aa1c34] dark:text-red-300 font-semibold text-xs flex items-center gap-1 px-2.5 transition-colors border border-red-200 dark:border-red-800"
+                                  onClick={() => setDeleteConfirm({ type: 'transaction', id: tx.id, name: 'Transaction of ' + tx.amount + ' MAD by ' + tx.memberName })}
+                                  className="p-1.5 rounded-md bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-[#aa1c34] dark:text-red-300 font-semibold text-xs flex items-center gap-1 px-2.5 transition-colors border border-red-200 dark:border-red-800"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                   Delete
@@ -1055,21 +1483,32 @@ export default function AdminPage() {
                     value={memberForm.name}
                     onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
                     placeholder="e.g. Youssef El Amrani"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#0a4f6c] dark:focus:border-sky-400"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#0a4f6c] dark:focus:border-sky-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">Role / Position *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">Role (FR / Primary) *</label>
                   <input
                     type="text"
                     required
                     value={memberForm.role}
-                    onChange={(e) => setMemberForm({ ...memberForm, role: e.target.value })}
-                    placeholder="e.g. President"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#0a4f6c] dark:focus:border-sky-400"
+                    onChange={(e) => setMemberForm({ ...memberForm, role: e.target.value, roleFr: e.target.value })}
+                    placeholder="e.g. Président"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#0a4f6c] dark:focus:border-sky-400"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">Role (English translation)</label>
+                <input
+                  type="text"
+                  value={memberForm.roleEn}
+                  onChange={(e) => setMemberForm({ ...memberForm, roleEn: e.target.value })}
+                  placeholder="e.g. President"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#0a4f6c] dark:focus:border-sky-400"
+                />
               </div>
 
               <div>
@@ -1079,7 +1518,7 @@ export default function AdminPage() {
                   value={memberForm.location}
                   onChange={(e) => setMemberForm({ ...memberForm, location: e.target.value })}
                   placeholder="Biougra, Morocco"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#0a4f6c] dark:focus:border-sky-400"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#0a4f6c] dark:focus:border-sky-400"
                 />
               </div>
 
@@ -1094,9 +1533,9 @@ export default function AdminPage() {
                 <textarea
                   rows={3}
                   value={memberForm.bio}
-                  onChange={(e) => setMemberForm({ ...memberForm, bio: e.target.value })}
+                  onChange={(e) => setMemberForm({ ...memberForm, bio: e.target.value, bioFr: e.target.value })}
                   placeholder="Describe member background or quote..."
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#0a4f6c] dark:focus:border-sky-400"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#0a4f6c] dark:focus:border-sky-400"
                 />
               </div>
 
@@ -1104,13 +1543,13 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => setMemberModalOpen(false)}
-                  className="px-4 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold"
+                  className="px-4 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-lg bg-[#0a4f6c] dark:bg-blue-600 hover:bg-[#083c53] dark:hover:bg-blue-700 text-white font-bold"
+                  className="px-4 py-1.5 rounded-lg bg-[#0a4f6c] dark:bg-blue-600 hover:bg-[#083c53] text-white font-bold"
                 >
                   Save Member
                 </button>
@@ -1120,7 +1559,386 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* --- ADD / EDIT TRANSACTION MODAL WITH MEMBER SEARCH / DROPDOWN --- */}
+      {/* --- ADD / EDIT EVENT MODAL (WITH DAYS CHRONOLOGY & TEAM) --- */}
+      {eventModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden my-8">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-[#aa1c34] dark:text-red-400" />
+                <h3 className="font-extrabold text-[#0a4f6c] dark:text-sky-400 text-sm">
+                  {editingEvent ? 'Edit Event Mission & Timeline' : 'Create New Event Mission'}
+                </h3>
+              </div>
+              <button onClick={() => setEventModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEvent} className="p-5 space-y-4 text-xs max-h-[82vh] overflow-y-auto">
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">Event Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={eventForm.title}
+                  onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+                  placeholder="e.g. Primary School Renovation in Douar Ait Baha"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#aa1c34]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">Category *</label>
+                  <select
+                    value={eventForm.category}
+                    onChange={(e) => setEventForm({ ...eventForm, category: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#aa1c34]"
+                  >
+                    <option value="School Refurbishment">School Refurbishment</option>
+                    <option value="Food Package Distribution">Food Package Distribution</option>
+                    <option value="Spring of Life Well Drilling">Spring of Life Well Drilling</option>
+                    <option value="Community Initiative">Community Initiative</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">Event Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={eventForm.date}
+                    onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#aa1c34]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">Location</label>
+                  <input
+                    type="text"
+                    value={eventForm.location}
+                    onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
+                    placeholder="e.g. Douar Ait Baha, Biougra"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#aa1c34]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">Impact Summary</label>
+                  <input
+                    type="text"
+                    value={eventForm.impactSummary}
+                    onChange={(e) => setEventForm({ ...eventForm, impactSummary: e.target.value })}
+                    placeholder="e.g. 120 Students Served"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#aa1c34]"
+                  />
+                </div>
+              </div>
+
+              <ImageUploadInput
+                label="Event Cover / Banner Image"
+                value={eventForm.imageUrl}
+                onChange={(url) => setEventForm({ ...eventForm, imageUrl: url })}
+              />
+
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">Short Summary / Excerpt *</label>
+                <textarea
+                  rows={2}
+                  required
+                  value={eventForm.excerpt}
+                  onChange={(e) => setEventForm({ ...eventForm, excerpt: e.target.value })}
+                  placeholder="Overview preview summary of the mission..."
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#aa1c34]"
+                />
+              </div>
+
+              {/* CONTRIBUTING TEAM MEMBERS SELECTOR */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/70 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-800 dark:text-slate-200 text-[11px] uppercase flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-[#0a4f6c] dark:text-sky-400" />
+                    Contributing Team Members ({eventForm.contributingMemberIds.length} Selected)
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-36 overflow-y-auto p-1">
+                  {members.map((m) => {
+                    const isSelected = eventForm.contributingMemberIds.includes(m.id);
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => toggleContributingMember(m.id)}
+                        className={'flex items-center gap-2 p-1.5 rounded-lg text-left border transition-all text-[11px] ' + (
+                          isSelected
+                            ? 'bg-[#0a4f6c]/10 dark:bg-sky-950/60 border-[#0a4f6c] dark:border-sky-400 font-bold text-[#0a4f6c] dark:text-sky-300'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-400'
+                        )}
+                      >
+                        <img
+                          src={m.photoUrl || '/images/member_1.jpg'}
+                          alt={m.name}
+                          className="w-5 h-5 rounded-full object-cover shrink-0"
+                          onError={(e) => {
+                            (e.target as HTMLElement).setAttribute('src', '/images/member_1.jpg');
+                          }}
+                        />
+                        <span className="truncate">{m.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* TIMELINE DAYS (DAY 1, DAY 2, DAY 3...) */}
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
+                  <div className="flex items-center gap-1.5 font-bold text-[#aa1c34] dark:text-red-400 text-xs uppercase">
+                    <Clock className="w-4 h-4" />
+                    <span>Mission Field Timeline ({eventForm.timelineDays.length} Days)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addTimelineDay}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#0a4f6c] hover:bg-[#083c53] text-white text-[11px] font-bold shadow-xs transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Next Day
+                  </button>
+                </div>
+
+                {eventForm.timelineDays.length === 0 ? (
+                  <p className="p-3 text-center text-slate-400 italic bg-slate-50 dark:bg-slate-900 rounded-lg">
+                    No timeline days yet. Click &quot;Add Next Day&quot; to build step-by-step chronology.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {eventForm.timelineDays.map((day, idx) => (
+                      <div key={idx} className="p-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2.5 relative">
+                        <div className="flex items-center justify-between">
+                          <span className="px-2 py-0.5 rounded-full bg-[#0a4f6c] dark:bg-blue-600 text-white font-extrabold text-[10px]">
+                            Day {day.dayNumber}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeTimelineDay(idx)}
+                            className="text-red-500 hover:text-red-700 text-[11px] font-semibold flex items-center gap-1"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Remove Day
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase text-slate-500">Day Title</label>
+                            <input
+                              type="text"
+                              value={day.title}
+                              onChange={(e) => updateTimelineDay(idx, 'title', e.target.value)}
+                              placeholder="e.g. Wall Sanding & Ceiling Repairs"
+                              className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md px-2.5 py-1 text-slate-800 dark:text-slate-100 text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase text-slate-500">Day Date</label>
+                            <input
+                              type="date"
+                              value={day.date}
+                              onChange={(e) => updateTimelineDay(idx, 'date', e.target.value)}
+                              className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md px-2.5 py-1 text-slate-800 dark:text-slate-100 text-xs"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-slate-500">Day Description</label>
+                          <textarea
+                            rows={2}
+                            value={day.description}
+                            onChange={(e) => updateTimelineDay(idx, 'description', e.target.value)}
+                            placeholder="Detailed activities, milestones and team efforts on this day..."
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md px-2.5 py-1 text-slate-800 dark:text-slate-100 text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-slate-500">Day Photo URL</label>
+                          <input
+                            type="text"
+                            value={day.images && day.images[0] ? day.images[0] : ''}
+                            onChange={(e) => updateTimelineDay(idx, 'images', [e.target.value])}
+                            placeholder="/images/school_renovation.jpg or https://..."
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md px-2.5 py-1 text-slate-800 dark:text-slate-100 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">Full Narrative Content</label>
+                <textarea
+                  rows={3}
+                  value={eventForm.content}
+                  onChange={(e) => setEventForm({ ...eventForm, content: e.target.value })}
+                  placeholder="Detailed wrap-up report and acknowledgements..."
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#aa1c34]"
+                />
+              </div>
+
+              <div className="pt-2.5 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEventModalOpen(false)}
+                  className="px-4 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 rounded-lg bg-[#aa1c34] hover:bg-[#7d1224] text-white font-bold"
+                >
+                  {editingEvent ? 'Update Event & Timeline' : 'Save Event Mission'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- ADD / EDIT NEWSLETTER MODAL --- */}
+      {newsletterModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden my-8">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center">
+                  <Newspaper className="w-4 h-4" />
+                </div>
+                <h3 className="font-extrabold text-[#0a4f6c] dark:text-sky-400 text-sm">
+                  {editingNewsletter ? 'Edit Newsletter Story' : 'Publish New Newsletter Story'}
+                </h3>
+              </div>
+              <button onClick={() => setNewsletterModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNewsletter} className="p-5 space-y-3.5 text-xs">
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">
+                  Story Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newsletterForm.title}
+                  onChange={(e) => setNewsletterForm({ ...newsletterForm, title: e.target.value })}
+                  placeholder="e.g. Video Report: Delivering 200 Food Parcels in Mountain Villages"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">
+                  External Link URL (YouTube, Instagram, or any link) *
+                </label>
+                <div className="relative">
+                  <ExternalLink className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="url"
+                    required
+                    value={newsletterForm.linkUrl}
+                    onChange={(e) => setNewsletterForm({ ...newsletterForm, linkUrl: e.target.value })}
+                    placeholder="https://www.youtube.com/watch?v=... or https://instagram.com/p/..."
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-9 pr-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-purple-500 font-mono"
+                  />
+                </div>
+                <p className="mt-1 text-[10px] text-slate-500">
+                  When visitors click this story, they will be directly taken to this link.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">
+                    Category / Media Type
+                  </label>
+                  <select
+                    value={newsletterForm.category}
+                    onChange={(e) => setNewsletterForm({ ...newsletterForm, category: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-purple-500"
+                  >
+                    <option value="YouTube Video">YouTube Video</option>
+                    <option value="Instagram Post">Instagram Post</option>
+                    <option value="Facebook Video">Facebook Video</option>
+                    <option value="Press Article">Press Article</option>
+                    <option value="Official Update">Official Update</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">
+                    Publish Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={newsletterForm.date}
+                    onChange={(e) => setNewsletterForm({ ...newsletterForm, date: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+              </div>
+
+              <ImageUploadInput
+                label="Story Thumbnail / Cover Image"
+                value={newsletterForm.imageUrl}
+                onChange={(url) => setNewsletterForm({ ...newsletterForm, imageUrl: url })}
+              />
+
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">
+                  Short Description *
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={newsletterForm.description}
+                  onChange={(e) => setNewsletterForm({ ...newsletterForm, description: e.target.value })}
+                  placeholder="Provide a concise description of what the video or post is about..."
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div className="pt-2.5 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setNewsletterModalOpen(false)}
+                  className="px-4 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold"
+                >
+                  {editingNewsletter ? 'Update Newsletter' : 'Publish Story'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- ADD / EDIT TRANSACTION MODAL --- */}
       {transactionModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
@@ -1139,14 +1957,11 @@ export default function AdminPage() {
             </div>
 
             <form onSubmit={handleSaveTransaction} className="p-5 space-y-4 text-xs">
-              
-              {/* MEMBER SELECTION (SEARCH & DROPDOWN) */}
               <div>
                 <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">
                   Donator (Must be a DOF Member) *
                 </label>
                 
-                {/* Search filter within members */}
                 <div className="relative mb-2">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <input
@@ -1158,7 +1973,6 @@ export default function AdminPage() {
                   />
                 </div>
 
-                {/* Member selection list */}
                 <div className="max-h-36 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg divide-y divide-slate-100 dark:divide-slate-700 bg-slate-50 dark:bg-slate-900">
                   {filteredSelectMembers.length === 0 ? (
                     <p className="p-3 text-center text-slate-400">No matching DOF members found.</p>
@@ -1170,9 +1984,9 @@ export default function AdminPage() {
                           key={m.id}
                           type="button"
                           onClick={() => setTransactionForm({ ...transactionForm, memberId: m.id, memberName: m.name })}
-                          className={`w-full flex items-center justify-between p-2 text-left hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors ${
+                          className={'w-full flex items-center justify-between p-2 text-left hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors ' + (
                             isSelected ? 'bg-emerald-100/70 dark:bg-emerald-950/50 font-bold text-emerald-800 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-300'
-                          }`}
+                          )}
                         >
                           <div className="flex items-center gap-2">
                             <img
@@ -1203,7 +2017,6 @@ export default function AdminPage() {
                 )}
               </div>
 
-              {/* AMOUNT & DATE */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">
@@ -1240,7 +2053,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* PURPOSE / NOTES */}
               <div>
                 <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 uppercase text-[11px]">
                   Purpose / Campaign Notes
@@ -1258,7 +2070,7 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => setTransactionModalOpen(false)}
-                  className="px-4 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold"
+                  className="px-4 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold"
                 >
                   Cancel
                 </button>
@@ -1294,7 +2106,7 @@ export default function AdminPage() {
             <div className="flex justify-center gap-2 pt-2">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs"
+                className="px-4 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold text-xs"
               >
                 Cancel
               </button>
@@ -1304,6 +2116,8 @@ export default function AdminPage() {
                     handleDeleteMember(deleteConfirm.id);
                   } else if (deleteConfirm.type === 'event') {
                     handleDeleteEvent(deleteConfirm.id);
+                  } else if (deleteConfirm.type === 'newsletter') {
+                    handleDeleteNewsletter(deleteConfirm.id);
                   } else if (deleteConfirm.type === 'transaction') {
                     handleDeleteTransaction(deleteConfirm.id);
                   }

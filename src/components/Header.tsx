@@ -56,6 +56,7 @@ export default function Header() {
     { name: t('nav.activities'), href: '/#activities' },
     { name: t('nav.members'), href: '/members' },
     { name: t('nav.events'), href: '/events' },
+    { name: t('nav.newsletter'), href: '/newsletter' },
     { name: t('nav.contact'), href: '/contact' },
   ];
 
@@ -76,9 +77,6 @@ export default function Header() {
           <div>
             <div className="font-extrabold text-lg tracking-tight leading-none text-[#0a4f6c] dark:text-sky-400 group-hover:text-[#aa1c34] dark:group-hover:text-red-400 transition-colors">
               Defenders <span className="text-[#aa1c34] dark:text-red-400">of Future</span>
-            </div>
-            <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-              {t('nav.siteLocation')}
             </div>
           </div>
         </Link>

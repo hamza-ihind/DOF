@@ -1,10 +1,11 @@
 import { neon } from '@neondatabase/serverless';
-import { INITIAL_MEMBERS, INITIAL_EVENTS, INITIAL_TRANSACTIONS, Member, EventItem, Transaction } from './seedData';
+import { INITIAL_MEMBERS, INITIAL_EVENTS, INITIAL_TRANSACTIONS, INITIAL_NEWSLETTERS, Member, EventItem, Transaction, NewsletterItem } from './seedData';
 
 // Fallback in-memory state ONLY when no database is configured
 let fallbackMembers: Member[] = [...INITIAL_MEMBERS];
 let fallbackEvents: EventItem[] = [...INITIAL_EVENTS];
 let fallbackTransactions: Transaction[] = [...INITIAL_TRANSACTIONS];
+let fallbackNewsletters: NewsletterItem[] = [...INITIAL_NEWSLETTERS];
 
 const isNeonConfigured = () => {
   const url = process.env.DATABASE_URL;
@@ -464,3 +465,135 @@ export async function deleteTransaction(id: number): Promise<boolean> {
     throw error;
   }
 }
+
+export async function getNewsletters(): Promise<NewsletterItem[]> {
+  if (!isNeonConfigured()) {
+    return fallbackNewsletters;
+  }
+
+  try {
+    const sql = neon(process.env.DATABASE_URL!);
+    const rows = await sql`
+      SELECT id, title, description, image_url as "imageUrl", link_url as "linkUrl", category, date, created_at as "createdAt"
+      FROM newsletters
+      ORDER BY date DESC, id DESC
+    `;
+
+    return (rows || []).map((r: any) => ({
+      ...r,
+      date: new Date(r.date).toISOString().split('T')[0]
+    })) as NewsletterItem[];
+  } catch (error) {
+    console.error('Neon DB getNewsletters failed:', error);
+    return fallbackNewsletters;
+  }
+}
+
+export async function addNewsletter(item: Omit<NewsletterItem, 'id'>): Promise<NewsletterItem> {
+  if (!isNeonConfigured()) {
+    const newId = fallbackNewsletters.length > 0 ? Math.max(...fallbackNewsletters.map(n => n.id)) + 1 : 1;
+    const newItem: NewsletterItem = { ...item, id: newId };
+    fallbackNewsletters.unshift(newItem);
+    return newItem;
+  }
+
+  try {
+    const sql = neon(process.env.DATABASE_URL!);
+    const rows = await sql`
+      INSERT INTO newsletters (title, description, image_url, link_url, category, date)
+      VALUES (
+        ${item.title},
+        ${item.description},
+        ${item.imageUrl},
+        ${item.linkUrl},
+        ${item.category || 'Update'},
+        ${item.date || new Date().toISOString().split('T')[0]}
+      )
+      RETURNING id, title, description, image_url as "imageUrl", link_url as "linkUrl", category, date, created_at as "createdAt"
+    `;
+
+    const res: any = rows[0];
+    return {
+      id: res.id,
+      title: res.title,
+      description: res.description,
+      imageUrl: res.imageUrl,
+      linkUrl: res.linkUrl,
+      category: res.category,
+      date: new Date(res.date).toISOString().split('T')[0],
+      createdAt: res.createdAt
+    };
+  } catch (error) {
+    console.error('Failed to add newsletter to Neon DB:', error);
+    throw error;
+  }
+}
+
+export async function updateNewsletter(id: number, itemData: Partial<Omit<NewsletterItem, 'id'>>): Promise<NewsletterItem | null> {
+  if (!isNeonConfigured()) {
+    const index = fallbackNewsletters.findIndex(n => n.id === id);
+    if (index === -1) return null;
+    fallbackNewsletters[index] = { ...fallbackNewsletters[index], ...itemData };
+    return fallbackNewsletters[index];
+  }
+
+  try {
+    const sql = neon(process.env.DATABASE_URL!);
+    const current = (await sql`SELECT * FROM newsletters WHERE id = ${id}`)[0];
+    if (!current) return null;
+
+    const updated = {
+      title: itemData.title ?? current.title,
+      description: itemData.description ?? current.description,
+      imageUrl: itemData.imageUrl ?? current.image_url,
+      linkUrl: itemData.linkUrl ?? current.link_url,
+      category: itemData.category ?? current.category,
+      date: itemData.date ?? new Date(current.date).toISOString().split('T')[0]
+    };
+
+    const rows = await sql`
+      UPDATE newsletters
+      SET title = ${updated.title},
+          description = ${updated.description},
+          image_url = ${updated.imageUrl},
+          link_url = ${updated.linkUrl},
+          category = ${updated.category},
+          date = ${updated.date}
+      WHERE id = ${id}
+      RETURNING id, title, description, image_url as "imageUrl", link_url as "linkUrl", category, date, created_at as "createdAt"
+    `;
+
+    const res: any = rows[0];
+    return {
+      id: res.id,
+      title: res.title,
+      description: res.description,
+      imageUrl: res.imageUrl,
+      linkUrl: res.linkUrl,
+      category: res.category,
+      date: new Date(res.date).toISOString().split('T')[0],
+      createdAt: res.createdAt
+    };
+  } catch (error) {
+    console.error('Failed to update newsletter in Neon DB:', error);
+    throw error;
+  }
+}
+
+export async function deleteNewsletter(id: number): Promise<boolean> {
+  if (!isNeonConfigured()) {
+    const initialLen = fallbackNewsletters.length;
+    fallbackNewsletters = fallbackNewsletters.filter(n => n.id !== id);
+    return fallbackNewsletters.length < initialLen;
+  }
+
+  try {
+    const sql = neon(process.env.DATABASE_URL!);
+    await sql`DELETE FROM newsletters WHERE id = ${id}`;
+    return true;
+  } catch (error) {
+    console.error('Failed to delete newsletter from Neon DB:', error);
+    throw error;
+  }
+}
+
