@@ -27,4 +27,11 @@ yarn-error.log*
 .DS_Store
 *.pem
 .vscode/
-.idea/
+.idea/
+
+.local-backups/
+.local-credentials/
+*.tsbuildinfo
+
+.next-qa/
+.next-build/

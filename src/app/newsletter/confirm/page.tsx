@@ -1,0 +1,2 @@
+import NewsletterPreference from '@/components/NewsletterPreference';
+export default async function Page({ searchParams }: { searchParams: Promise<{ token?: string }> }) { return <NewsletterPreference action="confirm" token={(await searchParams).token || ''} />; }

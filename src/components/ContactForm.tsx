@@ -76,7 +76,7 @@ export default function ContactForm() {
                 </div>
                 <div>
                   <h4 className="font-bold text-[#0a4f6c] dark:text-sky-300">{t('contact.phone')}</h4>
-                  <p className="text-slate-600 dark:text-slate-400">+212 600-000000</p>
+                  <p className="text-slate-600 dark:text-slate-400">Phone details coming soon</p>
                 </div>
               </div>
 
@@ -86,7 +86,7 @@ export default function ContactForm() {
                 </div>
                 <div>
                   <h4 className="font-bold text-[#0a4f6c] dark:text-sky-300">{t('contact.email')}</h4>
-                  <p className="text-slate-600 dark:text-slate-400">contact@defendersoffuture.org</p>
+                  <p className="text-slate-600 dark:text-slate-400">Email details coming soon</p>
                 </div>
               </div>
             </div>

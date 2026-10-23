@@ -47,15 +47,10 @@ export default function Hero() {
           {/* Visual Showcase / Placeholder Picture */}
           <div className="lg:col-span-5">
             <div className="relative rounded-2xl overflow-hidden shadow-xl border-2 border-white/10">
-              <div className="relative aspect-[16/10] w-full bg-slate-800">
-                <Image
-                  src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=1200&q=80"
-                  alt="Defenders of Future Showcase Picture"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-                <div className="absolute inset-0 bg-black/20" />
+              <div className="p-8 sm:p-10 bg-white/5 space-y-7">
+                <p className="text-xs tracking-[.25em] uppercase text-sky-200">Defenders of Future / Biougra</p>
+                <p className="text-3xl sm:text-4xl font-bold leading-tight">Small actions.<br />Shared purpose.<br /><span className="text-amber-300">Lasting possibilities.</span></p>
+                <div className="border-t border-white/20 pt-5 flex flex-wrap gap-3 text-sm"><span>Education</span><span aria-hidden="true">/</span><span>Solidarity</span><span aria-hidden="true">/</span><span>Water</span></div>
               </div>
             </div>
           </div>

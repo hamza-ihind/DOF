@@ -1,10 +1,5 @@
 import { neon } from '@neondatabase/serverless';
-import { INITIAL_MEMBERS, INITIAL_EVENTS, INITIAL_TRANSACTIONS, Member, EventItem, Transaction } from './seedData';
-
-// Fallback in-memory state ONLY when no database is configured
-let fallbackMembers: Member[] = [...INITIAL_MEMBERS];
-let fallbackEvents: EventItem[] = [...INITIAL_EVENTS];
-let fallbackTransactions: Transaction[] = [...INITIAL_TRANSACTIONS];
+import type { Member, EventItem, Transaction } from './seedData';
 
 const isNeonConfigured = () => {
   const url = process.env.DATABASE_URL;
@@ -19,7 +14,7 @@ const isNeonConfigured = () => {
 
 export async function getMembers(): Promise<Member[]> {
   if (!isNeonConfigured()) {
-    return fallbackMembers;
+    return [];
   }
 
   try {
@@ -37,17 +32,12 @@ export async function getMembers(): Promise<Member[]> {
     return (rows || []) as Member[];
   } catch (error) {
     console.error('Neon DB getMembers failed:', error);
-    return fallbackMembers;
+    return [];
   }
 }
 
 export async function addMember(member: Omit<Member, 'id'>): Promise<Member> {
-  if (!isNeonConfigured()) {
-    const newId = fallbackMembers.length > 0 ? Math.max(...fallbackMembers.map(m => m.id)) + 1 : 1;
-    const newMember: Member = { ...member, id: newId };
-    fallbackMembers.push(newMember);
-    return newMember;
-  }
+  if (!isNeonConfigured()) throw new Error('Database is not configured');
 
   try {
     const sql = neon(process.env.DATABASE_URL!);
@@ -64,12 +54,7 @@ export async function addMember(member: Omit<Member, 'id'>): Promise<Member> {
 }
 
 export async function updateMember(id: number, memberData: Partial<Omit<Member, 'id'>>): Promise<Member | null> {
-  if (!isNeonConfigured()) {
-    const index = fallbackMembers.findIndex(m => m.id === id);
-    if (index === -1) return null;
-    fallbackMembers[index] = { ...fallbackMembers[index], ...memberData };
-    return fallbackMembers[index];
-  }
+  if (!isNeonConfigured()) throw new Error('Database is not configured');
 
   try {
     const sql = neon(process.env.DATABASE_URL!);
@@ -110,11 +95,7 @@ export async function updateMember(id: number, memberData: Partial<Omit<Member, 
 }
 
 export async function deleteMember(id: number): Promise<boolean> {
-  if (!isNeonConfigured()) {
-    const initialLen = fallbackMembers.length;
-    fallbackMembers = fallbackMembers.filter(m => m.id !== id);
-    return fallbackMembers.length < initialLen;
-  }
+  if (!isNeonConfigured()) throw new Error('Database is not configured');
 
   try {
     const sql = neon(process.env.DATABASE_URL!);
@@ -128,7 +109,7 @@ export async function deleteMember(id: number): Promise<boolean> {
 
 export async function getEvents(): Promise<EventItem[]> {
   if (!isNeonConfigured()) {
-    return fallbackEvents;
+    return [];
   }
 
   try {
@@ -174,136 +155,39 @@ export async function getEvents(): Promise<EventItem[]> {
 }
 
 export async function addEvent(event: Omit<EventItem, 'id'>): Promise<EventItem> {
-  if (!isNeonConfigured()) {
-    const newId = fallbackEvents.length > 0 ? Math.max(...fallbackEvents.map(e => e.id)) + 1 : 1;
-    const newEvent: EventItem = { ...event, id: newId };
-    fallbackEvents.unshift(newEvent);
-    return newEvent;
-  }
-
-  try {
-    const sql = neon(process.env.DATABASE_URL!);
-    const rows = await sql`
+  if (!isNeonConfigured()) throw new Error('Database is not configured');
+  const sql = neon(process.env.DATABASE_URL!);
+  // The event and its contributor links commit together, including FK validation.
+  const rows = await sql`
+    WITH created AS (
       INSERT INTO events (slug, title, category, date, location, image_url, excerpt, content, impact_summary, timeline_days)
-      VALUES (
-        ${event.slug},
-        ${event.title},
-        ${event.category},
-        ${event.date},
-        ${event.location},
-        ${event.imageUrl},
-        ${event.excerpt},
-        ${event.content},
-        ${event.impactSummary || ''},
-        ${JSON.stringify(event.timelineDays || [])}
-      )
-      RETURNING id, slug, title, category, date, location, image_url as "imageUrl", excerpt, content, impact_summary as "impactSummary", timeline_days as "timelineDays"
-    `;
-
-    const created: any = rows[0];
-    if (event.contributingMemberIds && event.contributingMemberIds.length > 0) {
-      for (const mId of event.contributingMemberIds) {
-        await sql`INSERT INTO event_members (event_id, member_id) VALUES (${created.id}, ${mId}) ON CONFLICT DO NOTHING`;
-      }
-    }
-
-    const result: EventItem = {
-      id: created.id,
-      slug: created.slug,
-      title: created.title,
-      category: created.category,
-      date: new Date(created.date).toISOString().split('T')[0],
-      location: created.location,
-      imageUrl: created.imageUrl,
-      excerpt: created.excerpt,
-      content: created.content,
-      impactSummary: created.impactSummary,
-      timelineDays: typeof created.timelineDays === 'string' ? JSON.parse(created.timelineDays) : (created.timelineDays || []),
-      contributingMemberIds: event.contributingMemberIds || []
-    };
-    return result;
-  } catch (error) {
-    console.error('Failed to add event to Neon DB:', error);
-    throw error;
-  }
+      VALUES (${event.slug}, ${event.title}, ${event.category}, ${event.date}, ${event.location}, ${event.imageUrl}, ${event.excerpt}, ${event.content}, ${event.impactSummary}, ${JSON.stringify(event.timelineDays)})
+      RETURNING id
+    ), linked AS (
+      INSERT INTO event_members (event_id, member_id)
+      SELECT created.id, member.value::int FROM created CROSS JOIN jsonb_array_elements_text(${JSON.stringify(event.contributingMemberIds)}::jsonb) AS member(value)
+      RETURNING event_id
+    ) SELECT id FROM created
+  `;
+  return { ...event, id: rows[0].id };
 }
 
-export async function updateEvent(id: number, eventData: Partial<Omit<EventItem, 'id'>>): Promise<EventItem | null> {
-  if (!isNeonConfigured()) {
-    const index = fallbackEvents.findIndex(e => e.id === id);
-    if (index === -1) return null;
-    fallbackEvents[index] = { ...fallbackEvents[index], ...eventData };
-    return fallbackEvents[index];
-  }
-
-  try {
-    const sql = neon(process.env.DATABASE_URL!);
-    const current = (await sql`SELECT * FROM events WHERE id = ${id}`)[0];
-    if (!current) return null;
-
-    const updated = {
-      slug: eventData.slug ?? current.slug,
-      title: eventData.title ?? current.title,
-      category: eventData.category ?? current.category,
-      date: eventData.date ?? current.date,
-      location: eventData.location ?? current.location,
-      imageUrl: eventData.imageUrl ?? current.image_url,
-      excerpt: eventData.excerpt ?? current.excerpt,
-      content: eventData.content ?? current.content,
-      impactSummary: eventData.impactSummary ?? current.impact_summary,
-      timelineDays: eventData.timelineDays !== undefined ? eventData.timelineDays : (typeof current.timeline_days === 'string' ? JSON.parse(current.timeline_days) : (current.timeline_days || []))
-    };
-
-    const rows = await sql`
-      UPDATE events
-      SET slug = ${updated.slug},
-          title = ${updated.title},
-          category = ${updated.category},
-          date = ${updated.date},
-          location = ${updated.location},
-          image_url = ${updated.imageUrl},
-          excerpt = ${updated.excerpt},
-          content = ${updated.content},
-          impact_summary = ${updated.impactSummary},
-          timeline_days = ${JSON.stringify(updated.timelineDays)}
-      WHERE id = ${id}
-      RETURNING id, slug, title, category, date, location, image_url as "imageUrl", excerpt, content, impact_summary as "impactSummary", timeline_days as "timelineDays"
-    `;
-
-    if (eventData.contributingMemberIds) {
-      await sql`DELETE FROM event_members WHERE event_id = ${id}`;
-      for (const mId of eventData.contributingMemberIds) {
-        await sql`INSERT INTO event_members (event_id, member_id) VALUES (${id}, ${mId}) ON CONFLICT DO NOTHING`;
-      }
-    }
-
-    const res: any = rows[0];
-    return {
-      id: res.id,
-      slug: res.slug,
-      title: res.title,
-      category: res.category,
-      date: new Date(res.date).toISOString().split('T')[0],
-      location: res.location,
-      imageUrl: res.imageUrl,
-      excerpt: res.excerpt,
-      content: res.content,
-      impactSummary: res.impactSummary,
-      timelineDays: typeof res.timelineDays === 'string' ? JSON.parse(res.timelineDays) : (res.timelineDays || []),
-      contributingMemberIds: eventData.contributingMemberIds || []
-    };
-  } catch (error) {
-    console.error('Failed to update event in Neon DB:', error);
-    throw error;
-  }
+export async function updateEvent(id: number, data: Partial<Omit<EventItem, 'id'>>): Promise<EventItem | null> {
+  if (!isNeonConfigured()) throw new Error('Database is not configured');
+  const current = (await getEvents()).find(event => event.id === id);
+  if (!current) return null;
+  const event = { ...current, ...data };
+  const sql = neon(process.env.DATABASE_URL!);
+  const results = await sql.transaction([
+    sql`UPDATE events SET slug = ${event.slug}, title = ${event.title}, category = ${event.category}, date = ${event.date}, location = ${event.location}, image_url = ${event.imageUrl}, excerpt = ${event.excerpt}, content = ${event.content}, impact_summary = ${event.impactSummary}, timeline_days = ${JSON.stringify(event.timelineDays)} WHERE id = ${id} RETURNING id`,
+    sql`DELETE FROM event_members WHERE event_id = ${id}`,
+    sql`INSERT INTO event_members (event_id, member_id) SELECT ${id}, value::int FROM jsonb_array_elements_text(${JSON.stringify(event.contributingMemberIds)}::jsonb)`
+  ]);
+  return results[0].length ? event : null;
 }
 
 export async function deleteEvent(id: number): Promise<boolean> {
-  if (!isNeonConfigured()) {
-    const initialLen = fallbackEvents.length;
-    fallbackEvents = fallbackEvents.filter(e => e.id !== id);
-    return fallbackEvents.length < initialLen;
-  }
+  if (!isNeonConfigured()) throw new Error('Database is not configured');
 
   try {
     const sql = neon(process.env.DATABASE_URL!);
@@ -336,7 +220,7 @@ export async function saveContactMessage(name: string, email: string, subject: s
 
 export async function getTransactions(): Promise<Transaction[]> {
   if (!isNeonConfigured()) {
-    return fallbackTransactions;
+    return [];
   }
 
   try {
@@ -354,17 +238,12 @@ export async function getTransactions(): Promise<Transaction[]> {
     })) as Transaction[];
   } catch (error) {
     console.error('Neon DB getTransactions failed:', error);
-    return fallbackTransactions;
+    return [];
   }
 }
 
 export async function addTransaction(tx: Omit<Transaction, 'id'>): Promise<Transaction> {
-  if (!isNeonConfigured()) {
-    const newId = fallbackTransactions.length > 0 ? Math.max(...fallbackTransactions.map(t => t.id)) + 1 : 1;
-    const newTx: Transaction = { ...tx, id: newId, amount: Number(tx.amount) };
-    fallbackTransactions.unshift(newTx);
-    return newTx;
-  }
+  if (!isNeonConfigured()) throw new Error('Database is not configured');
 
   try {
     const sql = neon(process.env.DATABASE_URL!);
@@ -397,16 +276,7 @@ export async function addTransaction(tx: Omit<Transaction, 'id'>): Promise<Trans
 }
 
 export async function updateTransaction(id: number, txData: Partial<Omit<Transaction, 'id'>>): Promise<Transaction | null> {
-  if (!isNeonConfigured()) {
-    const index = fallbackTransactions.findIndex(t => t.id === id);
-    if (index === -1) return null;
-    fallbackTransactions[index] = {
-      ...fallbackTransactions[index],
-      ...txData,
-      amount: txData.amount !== undefined ? Number(txData.amount) : fallbackTransactions[index].amount
-    };
-    return fallbackTransactions[index];
-  }
+  if (!isNeonConfigured()) throw new Error('Database is not configured');
 
   try {
     const sql = neon(process.env.DATABASE_URL!);
@@ -449,11 +319,7 @@ export async function updateTransaction(id: number, txData: Partial<Omit<Transac
 }
 
 export async function deleteTransaction(id: number): Promise<boolean> {
-  if (!isNeonConfigured()) {
-    const initialLen = fallbackTransactions.length;
-    fallbackTransactions = fallbackTransactions.filter(t => t.id !== id);
-    return fallbackTransactions.length < initialLen;
-  }
+  if (!isNeonConfigured()) throw new Error('Database is not configured');
 
   try {
     const sql = neon(process.env.DATABASE_URL!);

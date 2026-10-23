@@ -1,3 +1,4 @@
+import HomeCommunity from '@/components/HomeCommunity';
 import React from 'react';
 import Link from 'next/link';
 import Hero from '@/components/Hero';
@@ -10,7 +11,7 @@ import ContactForm from '@/components/ContactForm';
 import { getMembers, getEvents } from '@/lib/db';
 import { ArrowRight } from 'lucide-react';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const members = await getMembers();
@@ -56,7 +57,7 @@ export default async function HomePage() {
           {featuredEvents.length === 0 ? (
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 text-center border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">
               <p className="text-sm font-bold text-slate-700 dark:text-slate-300">No events published yet.</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Create new event reports in the Admin control panel to display them here.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Our team will share activity reports here. Stay connected for upcoming news.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -72,6 +73,7 @@ export default async function HomePage() {
       {/* 5. Team Members Spotlight Section */}
       <HomeMembersSection members={members} />
 
+      <HomeCommunity />
       {/* 6. Contact Us Section */}
       <ContactForm />
     </div>

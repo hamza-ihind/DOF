@@ -1,0 +1,8 @@
+import { database } from '@/lib/security';
+import NewsletterSignup from '@/components/NewsletterSignup';
+export const dynamic = 'force-dynamic';
+export default async function Newsletters() {
+  let issues: Record<string, any>[] = []; let unavailable = false;
+  try { const sql = database(); issues = await sql`SELECT id, title, summary, content, published_at FROM newsletters WHERE published = TRUE ORDER BY published_at DESC`; } catch { unavailable = true; }
+  return <main className="workspace"><p className="eyebrow">FROM OUR COMMUNITY</p><h1>News & letters</h1><p className="mt-3 mb-8 text-slate-500">Stories from our association, practical updates, and ways to get involved.</p><div className="space-y-6">{issues.length ? issues.map(issue => <article className="panel form-stack scroll-mt-24" id={`issue-${issue.id}`} key={issue.id}><time className="eyebrow">{new Date(issue.published_at).toLocaleDateString('en-GB')}</time><h2>{issue.title}</h2><p className="font-semibold">{issue.summary}</p><div className="whitespace-pre-wrap break-words leading-relaxed">{issue.content}</div></article>) : <div className="panel"><h2>{unavailable ? 'Updates are temporarily unavailable' : 'Our next chapter starts here.'}</h2><p>{unavailable ? 'Please try again in a little while.' : 'Our team will share its first newsletter here soon. Subscribe below to stay connected.'}</p></div>}</div><NewsletterSignup /></main>;
+}

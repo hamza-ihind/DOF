@@ -7,7 +7,7 @@ export const metadata = {
   description: 'Executive Bureau, team members and volunteers of Defenders of Future association.',
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function MembersPage() {
   const members = await getMembers();

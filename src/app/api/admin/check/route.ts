@@ -1,14 +1,6 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { isValidAdminToken, ADMIN_COOKIE_NAME } from '@/lib/adminConfig';
-
+import { getSession } from '@/lib/auth';
 export async function GET() {
-  const cookieStore = cookies();
-  const token = cookieStore.get(ADMIN_COOKIE_NAME)?.value;
-
-  if (isValidAdminToken(token)) {
-    return NextResponse.json({ authenticated: true });
-  }
-
-  return NextResponse.json({ authenticated: false }, { status: 401 });
+  try { const session = await getSession(); return NextResponse.json({ authenticated: session?.role === 'admin' }, { status: session?.role === 'admin' ? 200 : 401 }); }
+  catch { return NextResponse.json({ authenticated: false }, { status: 503 }); }
 }

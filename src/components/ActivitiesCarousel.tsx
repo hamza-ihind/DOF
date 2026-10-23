@@ -86,7 +86,7 @@ export default function ActivitiesCarousel({ events }: ActivitiesCarouselProps) 
         {items.length === 0 ? (
           <div className="bg-slate-100 dark:bg-slate-800/60 rounded-2xl p-8 text-center border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 space-y-1">
             <p className="text-sm font-bold text-slate-700 dark:text-slate-300">No association activities published yet.</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Add new activity missions in the Admin panel to feature them here.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Check back for community stories and upcoming activities.</p>
           </div>
         ) : (
           <div

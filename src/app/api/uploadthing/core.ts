@@ -1,3 +1,4 @@
+import { requireAdmin } from '@/lib/auth';
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 
 const f = createUploadthing();
@@ -5,6 +6,7 @@ const f = createUploadthing();
 export const ourFileRouter = {
   imageUploader: f({ image: { maxFileSize: "4MB", maxFileCount: 1 } })
     .middleware(async () => {
+      await requireAdmin();
       return { userId: "admin" };
     })
     .onUploadComplete(async ({ metadata, file }) => {

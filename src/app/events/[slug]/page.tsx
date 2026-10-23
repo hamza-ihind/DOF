@@ -6,14 +6,14 @@ import { getEventBySlug, getMembers } from '@/lib/db';
 import { Calendar, MapPin, ArrowLeft, Sparkles, Users } from 'lucide-react';
 import TimelineDayCard from '@/components/TimelineDayCard';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function SingleEventPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const eventItem = await getEventBySlug(params.slug);
+  const eventItem = await getEventBySlug((await params).slug);
   if (!eventItem) {
     notFound();
   }

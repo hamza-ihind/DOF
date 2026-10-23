@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import '@uploadthing/react/styles.css';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';

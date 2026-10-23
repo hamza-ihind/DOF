@@ -7,7 +7,7 @@ export const metadata = {
   description: 'Explore field reports, school makeovers, food parcel distributions, and well drilling projects by Defenders of Future in Biougra, Morocco.',
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function EventsPage() {
   const events = await getEvents();
