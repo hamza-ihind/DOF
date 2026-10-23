@@ -100,6 +100,7 @@ export default function Header() {
   };
 
   const navLinks = [
+<<<<<<< HEAD
     { name: t('nav.home'), href: '/', icon: Home },
     { name: t('nav.about'), href: '/#about', icon: Info },
     { name: t('nav.activities'), href: '/#activities', icon: Sparkles },
@@ -108,6 +109,15 @@ export default function Header() {
     { name: t('nav.contact'), href: '/contact', icon: Mail },
     { name: t('nav.newsletters'), href: '/newsletters', icon: Newspaper },
     { name: t('nav.memberSpace'), href: '/account', icon: User },
+=======
+    { name: t('nav.home'), href: '/' },
+    { name: t('nav.about'), href: '/#about' },
+    { name: t('nav.activities'), href: '/#activities' },
+    { name: t('nav.members'), href: '/members' },
+    { name: t('nav.events'), href: '/events' },
+    { name: t('nav.newsletter'), href: '/newsletter' },
+    { name: t('nav.contact'), href: '/contact' },
+>>>>>>> 368d0179f0b6ba748a04b6f9e43715c842dbb7ea
   ];
 
   const isLinkActive = (href: string) => {
@@ -307,11 +317,18 @@ export default function Header() {
               <Link
                 key={idx}
                 href={link.href}
+<<<<<<< HEAD
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                   active
                     ? 'bg-red-50 dark:bg-red-950/40 text-[#aa1c34] dark:text-red-400 font-bold border border-red-200/60 dark:border-red-900/40 shadow-xs'
                     : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#aa1c34] dark:hover:text-red-400'
+=======
+                className={`text-sm font-semibold transition-colors py-1 ${
+                  isActive
+                    ? 'text-[#aa1c34] dark:text-red-400 font-bold'
+                    : 'text-slate-700 dark:text-slate-200 hover:text-[#aa1c34] dark:hover:text-red-400'
+>>>>>>> 368d0179f0b6ba748a04b6f9e43715c842dbb7ea
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -332,10 +349,28 @@ export default function Header() {
           })}
         </nav>
 
+<<<<<<< HEAD
         {/* Drawer Bottom Controls & CTAs */}
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 space-y-3">
           {/* Quick Controls: Theme & Language */}
           <div className="flex items-center justify-between gap-2">
+=======
+        {/* Action Controls: Theme Toggle + 3-Language Switcher (EN | FR | AR) + Admin/Support */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-all"
+            title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+          </button>
+
+          {/* Language Switcher Control (EN | FR) */}
+          <div className="relative flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold">
+            <Globe className="w-3.5 h-3.5 text-slate-400 ml-1.5 mr-1" />
+>>>>>>> 368d0179f0b6ba748a04b6f9e43715c842dbb7ea
             <button
               onClick={toggleTheme}
               className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
@@ -352,6 +387,31 @@ export default function Header() {
                 </>
               )}
             </button>
+<<<<<<< HEAD
+=======
+            <button
+              onClick={() => setLanguage('fr')}
+              className={`px-2 py-0.5 rounded-lg transition-all ${
+                language === 'fr'
+                  ? 'bg-[#aa1c34] text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              FR
+            </button>
+          </div>
+
+          {/* Admin Control */}
+          {isAdminLoggedIn ? (
+            <div className="flex items-center gap-1.5">
+              <Link
+                href="/admin"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0a4f6c] dark:bg-blue-600 text-white text-xs font-bold shadow hover:bg-[#083c53] transition-all"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                {t('nav.admin')}
+              </Link>
+>>>>>>> 368d0179f0b6ba748a04b6f9e43715c842dbb7ea
 
             <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold shadow-xs">
               <Globe className="w-3 h-3 text-slate-400 ml-1 mr-1" />
@@ -363,6 +423,7 @@ export default function Header() {
                     : 'text-slate-600 dark:text-slate-300'
                 }`}
               >
+<<<<<<< HEAD
                 EN
               </button>
               <button
@@ -374,10 +435,15 @@ export default function Header() {
                 }`}
               >
                 FR
+=======
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">{t('admin.logout')}</span>
+>>>>>>> 368d0179f0b6ba748a04b6f9e43715c842dbb7ea
               </button>
             </div>
           </div>
 
+<<<<<<< HEAD
           {/* Support Us CTA */}
           <Link
             href="/contact"
@@ -411,6 +477,40 @@ export default function Header() {
               </button>
             </div>
           ) : (
+=======
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="lg:hidden p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Navigation Drawer */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 pt-2 pb-4 space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+            <span className="text-xs font-bold text-slate-500">Language / اللغة</span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setLanguage('en')}
+                className={`px-2 py-1 rounded text-xs font-bold ${language === 'en' ? 'bg-[#0a4f6c] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLanguage('fr')}
+                className={`px-2 py-1 rounded text-xs font-bold ${language === 'fr' ? 'bg-[#aa1c34] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
+              >
+                FR
+              </button>
+            </div>
+          </div>
+
+          {navLinks.map((link, idx) => (
+>>>>>>> 368d0179f0b6ba748a04b6f9e43715c842dbb7ea
             <Link
               href="/admin"
               onClick={() => setMobileMenuOpen(false)}
@@ -419,7 +519,11 @@ export default function Header() {
               <Lock className="w-3.5 h-3.5" />
               <span>{t('nav.admin')}</span>
             </Link>
+<<<<<<< HEAD
           )}
+=======
+          ))}
+>>>>>>> 368d0179f0b6ba748a04b6f9e43715c842dbb7ea
         </div>
       </aside>
     </>

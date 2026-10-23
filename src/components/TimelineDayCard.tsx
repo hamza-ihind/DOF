@@ -75,6 +75,7 @@ export default function TimelineDayCard({ day }: TimelineDayCardProps) {
                 src={day.images[currentImgIndex]}
                 alt={`${day.title} photo ${currentImgIndex + 1}`}
                 fill
+                unoptimized={Boolean(day.images[currentImgIndex] && day.images[currentImgIndex].startsWith('http'))}
                 className="object-cover transition-opacity duration-300"
               />
             </div>
